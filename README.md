@@ -1,0 +1,90 @@
+# AONIX
+
+**AND-OR-NOT Integrated eXploration**
+
+AONIX es una plataforma determinista, 2D, escalable, verificable y visual donde agentes humanos, buscadores automáticos y modelos de IA aprenden a construir, simular, verificar, optimizar, visualizar y explicar circuitos digitales usando exclusivamente las compuertas primitivas **AND**, **OR** y **NOT**.
+
+> La IA propone, pero AONIX determina la verdad técnica.
+
+AONIX no es la IA. AONIX es el mundo formal donde la IA aprende.
+
+---
+
+## Reglas absolutas
+
+1. El sistema es un entorno lógico y visual **2D**.
+2. Las únicas compuertas primitivas son **AND, OR y NOT**.
+
+No existen como primitivas: XOR, XNOR, NAND, NOR, ni ninguna otra derivada. Los circuitos compuestos (multiplexores, full adders, ALUs, registros, CPUs mínimas) **sí** pueden guardarse como entidades canónicas, siempre que estén expandidos internamente a AND/OR/NOT.
+
+Detalle exhaustivo: [docs/01-rules-absolute.md](docs/01-rules-absolute.md).
+
+---
+
+## Mapa de capas
+
+| # | Capa | Responsabilidad |
+|---|------|-----------------|
+| 1 | Mundo lógico | Señales, compuertas, circuitos, estados, tareas, pruebas, niveles |
+| 2 | `.aoncir` | Representación canónica del circuito |
+| 3 | `.aonclg` | Representación de aprendizaje para IA |
+| 4 | Validador | Revisa si una acción es legal antes de ejecutarla |
+| 5 | Simulador | Ejecuta circuitos sobre entradas |
+| 6 | Verificador | Decide si el circuito cumple su especificación |
+| 7 | Evaluador | Mide calidad estructural |
+| 8 | Pruebas escalables | Exhaustivas, aleatorias, dirigidas, por propiedades, modulares |
+| 9 | Memoria | Canónica, histórica, aprendizaje, experimental, pruebas, visual, curricular, trayectorias, fallos, optimización |
+| 10 | Currículo | Niveles y condiciones de avance |
+| 11 | Traducción humana | Explica circuitos, errores, métricas, decisiones |
+| 12 | Traducción para IA | Estado, acciones, recompensas, contexto |
+| 13 | Visualización 2D (Vulkan) | Renderiza grafos, señales, conos, flujos |
+| 14 | Experimentación y auditoría | Intentos, regresiones, benchmarks, trazabilidad |
+| 15 | Coordinador central | Orquesta todos los módulos por episodio |
+
+Detalle por capa: [docs/02-architecture.md](docs/02-architecture.md).
+
+---
+
+## Documentación
+
+Núcleo:
+
+- [00 — Visión y principio rector](docs/00-vision.md)
+- [01 — Reglas absolutas](docs/01-rules-absolute.md)
+- [02 — Arquitectura por capas](docs/02-architecture.md)
+
+Formatos canónicos:
+
+- [03 — Formato `.aoncir`](docs/03-format-aoncir.md)
+- [04 — Formato `.aonclg`](docs/04-format-aonclg.md)
+
+Subsistemas:
+
+- [05 — Sistema de memorias](docs/05-memory-system.md)
+- [06 — Sistema curricular](docs/06-curriculum.md)
+- [07 — Pruebas y verificación](docs/07-testing-and-verification.md)
+- [08 — Acciones y función de recompensa](docs/08-actions-and-rewards.md)
+- [09 — Visualización 2D con Vulkan](docs/09-visualization-vulkan.md)
+- [10 — Coordinador central](docs/10-coordinator.md)
+
+Operativa:
+
+- [11 — Hoja de ruta por fases](docs/11-roadmap.md)
+- [Glosario AONIX](docs/glossary.md)
+
+---
+
+## Estado
+
+Proyecto en **Fase 0 — Fundación documental**. El núcleo lógico (Rust, edición 2024) aún no está implementado. Ver [docs/11-roadmap.md](docs/11-roadmap.md) para fases siguientes.
+
+## Stack
+
+- **Lenguaje:** Rust edición 2024
+- **Visualización:** Vulkan (capa puramente de render; no decide, no verifica)
+- **Formatos propios:** `.aoncir`, `.aonclg`
+- **Determinismo:** misma entrada + mismo circuito → mismo resultado, siempre
+
+## Licencia
+
+Por definir.
