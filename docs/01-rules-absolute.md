@@ -19,11 +19,11 @@ Implicaciones:
 
 Las únicas compuertas lógicas **primitivas** son:
 
-- `AND` (cualquier aridad ≥ 2)
-- `OR` (cualquier aridad ≥ 2)
-- `NOT` (aridad 1)
+- `AND` (aridad estricta: exactamente 2 entradas)
+- `OR` (aridad estricta: exactamente 2 entradas)
+- `NOT` (aridad estricta: exactamente 1 entrada)
 
-> Nota sobre aridad: cuando convenga al simulador, las versiones N-arias pueden internamente expandirse a árboles binarios determinísticos. Esto es una decisión de representación, no una nueva primitiva.
+> **Nota normativa sobre aridad (Fase 1).** AONIX usa **aridad estricta binaria** para `AND` y `OR`. Un `AND` de 3 entradas debe construirse como composición de dos `AND` de 2 entradas; lo mismo para `OR`. Esto preserva la honestidad de las métricas de conteo, profundidad y costo: cada `AND` real cuenta como uno; un agente que quiera combinar más entradas paga el precio estructural correspondiente. Una eventual extensión a versiones N-arias en una `format_version` futura sería un cambio auditado del catálogo (severidad S3 en [25 — Política de auditoría humana](25-human-audit-policy.md)), nunca silencioso.
 
 **No existen como primitivas** y **no pueden existir como operaciones invocables**:
 

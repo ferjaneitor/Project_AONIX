@@ -96,13 +96,14 @@ Un `.aoncir` describe:
 El grafo extraído de un `.aoncir` debe cumplir, sin excepción:
 
 1. Todo nodo es de tipo `AND`, `OR` o `NOT`. **Cualquier otro tipo invalida el archivo.**
-2. Todo `NOT` tiene aridad de entrada exactamente 1.
-3. Todo `AND` y `OR` tienen aridad de entrada ≥ 2.
+2. Todo `NOT` tiene aridad de entrada **exactamente 1**.
+3. Todo `AND` y todo `OR` tienen aridad de entrada **exactamente 2** (regla normativa de Fase 1; ver [01 — Reglas absolutas](01-rules-absolute.md)).
 4. Toda señal está definida antes de ser usada (no hay referencias colgantes).
 5. Toda señal usada como entrada de algún nodo proviene de:
    - un puerto de entrada del circuito, **o**
-   - la salida de otro nodo, **o**
-   - una constante explícita (`0` o `1`).
+   - la salida de otro nodo.
+
+   **Las constantes lógicas (`0`, `1`) no son fuentes primitivas de señal en Fase 1.** Un circuito que necesite producir un valor constante debe construirlo (por ejemplo, `y = a AND NOT a` para constante 0, o `y = a OR NOT a` para constante 1), lo cual lo convierte en tarea legítima de aprendizaje (ver tareas `constant_zero` y `constant_one` del nivel 1 en [20 — Catálogo](20-task-catalog-levels-0-5.md)). Una futura excepción explícita y auditada podría reintroducir constantes; hasta entonces, no existen como fuentes primitivas.
 6. Toda salida del circuito se asigna a alguna señal existente.
 7. El grafo es un DAG. No hay ciclos salvo cuando el nivel lo permite explícitamente (estructuras de memoria con feedback gobernado por `clock`), y en ese caso la "rotura" del ciclo está documentada en el archivo.
 8. No hay señales muertas en la versión oficial activa (las muertas pueden existir en versiones experimentales, pero el verificador rechaza promoverlas a oficiales).
@@ -122,56 +123,82 @@ Dos `.aoncir` con el mismo hash canónico son **estructuralmente equivalentes**.
 
 ## Esqueleto ilustrativo (no normativo)
 
-Solo a fines de comunicar la forma esperada; la sintaxis final se fijará cuando el usuario apruebe la alternativa de representación.
+Esqueleto **alineado con la sintaxis física aprobada** ([21 — Sintaxis física de `.aoncir`](21-aoncir-syntax.md)): arrays de tablas `[[ports.inputs]]` / `[[ports.outputs]]` para preservar el orden de aparición como contrato formal del vector, identificadores explícitos sin abreviaturas, y `bit_position` opcional para buses futuros.
 
 ```toml
+[format]
+format_version = "1.0.0"
+
 [meta]
-name = "one_bit_full_adder"
-version = "1.0.0"
-width = 1
-level = 7
-hash_canonical = "..."
-predecessor = []
-created_at = "2026-05-11T19:20:00Z"
+name           = "one_bit_full_adder"
+version        = "1.0.0"
+parameters     = { width = 1 }
+level          = 5
+hash_canonical = "blake3:..."
+predecessor    = ""
+created_at     = "2026-05-11T19:20:00Z"
 
-[ports.inputs]
-a       = { semantic_tag = "operand_bit" }
-b       = { semantic_tag = "operand_bit" }
-cin     = { semantic_tag = "carry" }
+# Orden de aparición = contrato del InputVector:
+# [ operand_a, operand_b, carry_input ]
 
-[ports.outputs]
-sum     = { semantic_tag = "sum_bit" }
-cout    = { semantic_tag = "carry" }
+[[ports.inputs]]
+name         = "operand_a"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "operand_b"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "carry_input"
+semantic_tag = "carry"
+group        = ""
+
+# Orden de aparición = contrato del OutputVector:
+# [ sum_output, carry_output ]
+
+[[ports.outputs]]
+name         = "sum_output"
+semantic_tag = "sum_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "carry_output"
+semantic_tag = "carry"
+group        = ""
 
 [[signals]]
-id = "s1"
+id = "operand_b_negated"
 [[signals]]
-id = "s2"
+id = "operand_a_and_operand_b_negated"
 # ... más señales internas
 
 [[gates]]
-id = "g1"
-kind = "NOT"
-inputs = ["b"]
-output = "nb"
+id     = "g1"
+kind   = "NOT"
+inputs = ["operand_b"]
+output = "operand_b_negated"
 
 [[gates]]
-id = "g2"
-kind = "AND"
-inputs = ["a", "nb"]
-output = "s1"
+id     = "g2"
+kind   = "AND"
+inputs = ["operand_a", "operand_b_negated"]
+output = "operand_a_and_operand_b_negated"
 
-# ... el grafo completo expandido a AND/OR/NOT, sin XOR
+# ... el grafo completo expandido a AND/OR/NOT.
+# Ninguna compuerta xor / nand / nor / xnor aparece en ningún nivel.
 
 [verification]
-suite = "exhaustive_3_inputs"
-passed = 8
-total = 8
-seed = null
+result = "PASS"
+suites = [
+    { id = "exhaustive_suite_8cases", version = "1.0.0", passed = 8, total = 8, seed = "" },
+]
 
 [metrics]
-gate_count = { AND = 5, OR = 2, NOT = 2 }
-depth = 4
+gate_count   = { AND = 6, OR = 3, NOT = 4, TOTAL = 13 }
+depth        = 5
 dead_signals = 0
 ```
 

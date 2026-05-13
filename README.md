@@ -78,6 +78,15 @@ Especificaciones formales (consolidación):
 - [18 — Memoria operativa vs no operativa](docs/18-operational-vs-non-operational-memory.md)
 - [19 — Política de versionado (oficial activo vs histórica)](docs/19-versioning-policy.md)
 
+Cierre normativo concreto (catálogos y políticas):
+
+- [20 — Catálogo inicial de tareas (niveles 0–5)](docs/20-task-catalog-levels-0-5.md)
+- [21 — Sintaxis física de `.aoncir` (TOML inicial)](docs/21-aoncir-syntax.md)
+- [22 — Catálogo de casos límite por familia](docs/22-edge-case-catalog.md)
+- [23 — Catálogo de transformaciones del optimizador](docs/23-optimizer-transformations.md)
+- [24 — Convenciones de etiquetas semánticas](docs/24-semantic-tag-conventions.md)
+- [25 — Política de auditoría humana](docs/25-human-audit-policy.md)
+
 Operativa:
 
 - [11 — Hoja de ruta por fases](docs/11-roadmap.md)

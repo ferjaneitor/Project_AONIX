@@ -41,7 +41,7 @@ El validador rechaza una acción **antes** de ejecutarla. El estado del circuito
 **Por inconsistencia estructural:**
 
 5. Compuerta `NOT` con aridad distinta de 1.
-6. Compuerta `AND` u `OR` con aridad < 2.
+6. Compuerta `AND` u `OR` con aridad distinta de 2 (aridad estricta de Fase 1; ver [01 — Reglas absolutas](01-rules-absolute.md)).
 7. Acción que referencia una señal indefinida.
 8. Acción que duplica un identificador ya existente (señal, nodo).
 9. Acción que crearía un ciclo no permitido en el nivel actual.
