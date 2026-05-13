@@ -96,13 +96,14 @@ Un `.aoncir` describe:
 El grafo extraído de un `.aoncir` debe cumplir, sin excepción:
 
 1. Todo nodo es de tipo `AND`, `OR` o `NOT`. **Cualquier otro tipo invalida el archivo.**
-2. Todo `NOT` tiene aridad de entrada exactamente 1.
-3. Todo `AND` y `OR` tienen aridad de entrada ≥ 2.
+2. Todo `NOT` tiene aridad de entrada **exactamente 1**.
+3. Todo `AND` y todo `OR` tienen aridad de entrada **exactamente 2** (regla normativa de Fase 1; ver [01 — Reglas absolutas](01-rules-absolute.md)).
 4. Toda señal está definida antes de ser usada (no hay referencias colgantes).
 5. Toda señal usada como entrada de algún nodo proviene de:
    - un puerto de entrada del circuito, **o**
-   - la salida de otro nodo, **o**
-   - una constante explícita (`0` o `1`).
+   - la salida de otro nodo.
+
+   **Las constantes lógicas (`0`, `1`) no son fuentes primitivas de señal en Fase 1.** Un circuito que necesite producir un valor constante debe construirlo (por ejemplo, `y = a AND NOT a` para constante 0, o `y = a OR NOT a` para constante 1), lo cual lo convierte en tarea legítima de aprendizaje (ver tareas `constant_zero` y `constant_one` del nivel 1 en [20 — Catálogo](20-task-catalog-levels-0-5.md)). Una futura excepción explícita y auditada podría reintroducir constantes; hasta entonces, no existen como fuentes primitivas.
 6. Toda salida del circuito se asigna a alguna señal existente.
 7. El grafo es un DAG. No hay ciclos salvo cuando el nivel lo permite explícitamente (estructuras de memoria con feedback gobernado por `clock`), y en ese caso la "rotura" del ciclo está documentada en el archivo.
 8. No hay señales muertas en la versión oficial activa (las muertas pueden existir en versiones experimentales, pero el verificador rechaza promoverlas a oficiales).

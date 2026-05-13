@@ -258,9 +258,9 @@ output = "a_xor_b"             # comportamiento XOR — nombre libre del agente
 Reglas de validación del parser:
 
 1. `kind` ∈ `{"AND", "OR", "NOT"}` exactamente. **Cualquier otro valor invalida el archivo (L3, causa: ABSOLUTE_RULE).**
-2. Si `kind = "NOT"` ⇒ `inputs` tiene exactamente 1 elemento.
-3. Si `kind = "AND"` o `"OR"` ⇒ `inputs` tiene al menos 2 elementos.
-4. Cada elemento de `inputs` referencia el nombre de un puerto de entrada, una señal interna o `"0"` / `"1"` (constantes).
+2. Si `kind = "NOT"` ⇒ `inputs` tiene **exactamente 1** elemento.
+3. Si `kind = "AND"` o `"OR"` ⇒ `inputs` tiene **exactamente 2** elementos (aridad estricta de Fase 1; ver [01 — Reglas absolutas](01-rules-absolute.md)).
+4. Cada elemento de `inputs` referencia el nombre de un puerto de entrada o de una señal interna. **Las constantes (`"0"`, `"1"`) no son referencias válidas en Fase 1**; un circuito que necesite un valor constante debe derivarlo (por ejemplo, `y = a AND NOT a` ≡ 0).
 5. `output` referencia una señal interna declarada en `[[signals]]` o (excepcionalmente) un puerto de salida si la compuerta alimenta directamente la salida (en cuyo caso `[[outputs]]` puede declararse implícitamente; ver siguiente sección).
 6. `id` de compuerta es único en el archivo.
 7. El grafo derivado debe ser DAG salvo en niveles ≥ 11 donde feedback temporal con gating por `clock` se permite explícitamente.
@@ -286,7 +286,7 @@ Reglas:
 
 - Cada puerto declarado en `[[ports.outputs]]` aparece exactamente **una vez** como `port` en `[[outputs]]`.
 - `source` referencia una señal interna o un puerto de entrada (raro; ej. `pass_through`).
-- No se permite `source` constante directa para `status="official_active"` (las constantes solo en `[[gates]].inputs`).
+- No se permiten constantes (`"0"`, `"1"`) como `source` ni como elemento de `[[gates]].inputs` en Fase 1. Una versión oficial activa nunca contiene referencias a constantes primitivas. Si se necesita un valor constante, el circuito lo deriva con compuertas (`y = a AND NOT a` ≡ 0, `y = a OR NOT a` ≡ 1).
 
 ---
 
@@ -866,7 +866,7 @@ PARSER STRICT VALIDATIONS
 8.  Todo gate.kind ∈ {"AND", "OR", "NOT"}.
 9.  Aridades respetadas según kind.
 10. Todo input de gate referencia entidad existente (port input, signal,
-    o constante "0"/"1").
+    sin constantes en Fase 1).
 11. Toda signal declarada se referencia al menos una vez (modo estricto
     para status="official_active"; warning para experimental).
 12. Cada [[outputs]].port aparece en [[ports.outputs]] y exactamente una

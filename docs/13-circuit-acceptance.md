@@ -18,15 +18,16 @@ Un circuito es **estructuralmente válido** si cumple **todas** las siguientes c
 ### A. Conformidad con las reglas absolutas
 
 1. Todos los nodos del grafo son de tipo `AND`, `OR` o `NOT`. **No hay excepciones.**
-2. Las aridades son correctas:
+2. Las aridades son **estrictas**:
    - `NOT` con exactamente 1 entrada.
-   - `AND` y `OR` con al menos 2 entradas.
+   - `AND` con exactamente 2 entradas.
+   - `OR` con exactamente 2 entradas.
 3. El circuito está expresado en un entorno 2D (las posiciones de layout, si están presentes, son coordenadas 2D válidas).
 4. Si el circuito declara o referencia subcircuitos compuestos, su expansión completa a primitivas no introduce ningún nodo distinto a AND/OR/NOT.
 
 ### B. Conformidad de grafo
 
-5. Toda señal usada como entrada de algún nodo está definida (proviene de un puerto de entrada, de la salida de otro nodo, o de una constante explícita `0` o `1`).
+5. Toda señal usada como entrada de algún nodo está definida (proviene de un puerto de entrada o de la salida de otro nodo). **Las constantes (`0`, `1`) no son fuentes primitivas válidas en Fase 1** (ver [03 — Formato `.aoncir`](03-format-aoncir.md) §A regla 5).
 6. Toda salida del circuito está conectada a una señal existente.
 7. Los identificadores de señal son únicos.
 8. El grafo es un **DAG**. Excepción: en circuitos con feedback temporal gobernado por señales etiquetadas `clock`, se permite el ciclo siempre que la rotura del ciclo (gating temporal) esté explícitamente documentada en el `.aoncir` y validada por el modo temporal del simulador.

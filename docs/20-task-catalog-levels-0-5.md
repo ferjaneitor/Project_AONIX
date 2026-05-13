@@ -180,10 +180,13 @@ success         Verifier=PASA. Detección de la entrada como muerta (no usada)
                 debe documentarse, no penalizarse (la tarea pide que la entrada
                 exista pero permite que no afecte la salida).
 metrics         gate_count
-notes           Soluciones aceptables:
-                 - constante 0 explícita (si el formato la admite),
-                 - y = a AND NOT a (idempotencia booleana válida).
-                El optimizador puede simplificar la segunda a constante.
+notes           Solución canónica de Fase 1:
+                  y = a AND NOT a   (equivalente a 0 por complemento booleano).
+                AONIX no admite "constante 0 explícita" como SignalReference
+                primitiva en Fase 1: la tarea constant_zero es justamente
+                aprender a derivar 0 con primitivas. El optimizador puede
+                reconocer la equivalencia y reorganizar el grafo, pero la
+                versión oficial activa se serializa con compuertas reales.
 ```
 
 ## L1.T4 — `constant_one`
@@ -200,9 +203,11 @@ unlocks         nivel 2
 required_tests  exhaustive_suite_2cases
 success         Verifier=PASA.
 metrics         gate_count
-notes           Soluciones aceptables:
-                 - constante 1 explícita,
-                 - y = a OR NOT a.
+notes           Solución canónica de Fase 1:
+                  y = a OR NOT a   (equivalente a 1 por complemento booleano).
+                AONIX no admite "constante 1 explícita" como SignalReference
+                primitiva en Fase 1: la tarea constant_one obliga a derivar 1
+                con primitivas, igual que constant_zero.
 ```
 
 ---
@@ -276,8 +281,12 @@ unlocks         or_3
 required_tests  exhaustive_suite_8cases + edge_cases_3input_v1
 success         Verifier=PASA.
 metrics         gate_count, depth
-notes           Solución óptima usa AND n-ario o composición de 2 AND.
-                El sistema permite AND n-ario internamente; aridad ≥ 2.
+notes           Solución óptima: composición de 2 AND binarios
+                (por ejemplo, t = a AND b; y = t AND c).
+                AONIX usa aridad estricta binaria en Fase 1 para AND y OR
+                (ver docs/01-rules-absolute.md). Un "AND de 3 entradas" se
+                construye encadenando dos AND, lo cual cuenta como dos
+                gates en las métricas — comportamiento honesto deseado.
 ```
 
 ## L3.T2 — `or_3`

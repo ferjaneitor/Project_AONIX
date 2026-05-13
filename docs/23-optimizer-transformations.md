@@ -146,16 +146,22 @@ notes           Útil cuando la construcción del agente repite una entrada
 id              identity
 name            Elementos identidad
 goal            ↓ gate_count
-preconditions   Existe AND(x, 1) o OR(x, 0).
-can_change      Reemplazar por x.
+preconditions   Existe una compuerta cuya OTRA entrada es
+                demostrablemente equivalente a 1 (para AND) o a 0
+                (para OR) por análisis algebraico (típicamente, una
+                rama del propio circuito que cumple x OR NOT x ≡ 1, o
+                x AND NOT x ≡ 0).
+can_change      Redirigir consumidores hacia la entrada no-identidad x.
+                Eliminar la compuerta original si queda sin consumidores.
 must_not_change Comportamiento.
 required_tests  Suite completa de la tarea.
 equivalence_risk low.
 category        B — Leyes booleanas
 introduced_in   1.0.0
-notes           Las constantes aparecen sólo en circuitos que las
-                declaran explícitamente; la transformación se aplica
-                tras pliegues constantes (B.5).
+notes           AONIX no admite constantes como SignalReference primitiva
+                en Fase 1, por lo que el "1" o "0" de esta regla no es
+                un nodo del .aoncir sino una equivalencia detectada por
+                el análisis. Combina bien con B.5 (complemento).
 ```
 
 ## B.3 — `annihilation`
@@ -163,16 +169,23 @@ notes           Las constantes aparecen sólo en circuitos que las
 ```
 id              annihilation
 name            Elementos aniquiladores
-goal            ↓ gate_count y propagación de constantes
-preconditions   Existe AND(x, 0) o OR(x, 1).
-can_change      Reemplazar por la constante (0 o 1, respectivamente).
-                Propagar la constante hacia abajo en la red.
-must_not_change Comportamiento. Si x tenía fan-out a otros lados, esos
-                consumidores no se tocan.
+goal            ↓ gate_count y simplificación local
+preconditions   Existe una compuerta cuya OTRA entrada es
+                demostrablemente equivalente a 0 (para AND, resultado
+                trivial 0) o a 1 (para OR, resultado trivial 1).
+can_change      Sustituir el subgrafo que produce esa compuerta por
+                una rama del circuito que produce el valor aniquilador
+                de forma equivalente, eliminando compuertas que dejan
+                de ser necesarias.
+must_not_change Comportamiento. Otros consumidores de las señales
+                originales si los hay.
 required_tests  Suite completa.
 equivalence_risk low.
 category        B — Leyes booleanas
 introduced_in   1.0.0
+notes           Como en B.2, "0" y "1" son propiedades emergentes del
+                análisis, no SignalReferences. La transformación nunca
+                produce un nodo constante en el .aoncir resultado.
 ```
 
 ## B.4 — `absorption`
@@ -470,71 +483,104 @@ notes           Combina bien con E.1 (CSE).
 
 ---
 
-# Categoría G — Pliegue de constantes
+# Categoría G — Pliegue de constantes (reformulada para Fase 1)
 
-## G.1 — `constant_folding`
+> **Nota normativa de Fase 1.** AONIX no admite constantes (`0`, `1`)
+> como `SignalReference` primitiva (ver [03 — Formato `.aoncir`](03-format-aoncir.md)
+> y [21 — Sintaxis física](21-aoncir-syntax.md)). Por tanto, las
+> transformaciones de esta categoría **no introducen nodos constantes**;
+> reorganizan el grafo cuando un subgrafo es **demostrablemente equivalente**
+> a un valor constante. La "constante" es propiedad emergente del análisis,
+> no entidad del modelo.
+
+## G.1 — `constant_equivalent_subgraph_reduction`
 
 ```
-id              constant_folding
-name            Pliegue de constantes
+id              constant_equivalent_subgraph_reduction
+name            Reducción de subgrafo equivalente a constante
 goal            ↓ gate_count
-preconditions   Una compuerta tiene todas sus entradas constantes (`"0"` o `"1"`)
-                o se reduce a una constante tras aplicar B.2, B.3.
-can_change      Reemplazar la salida por la constante; propagar.
-must_not_change Comportamiento.
+preconditions   Subgrafo cuyo valor de salida es demostrablemente
+                constante para toda entrada del dominio (típicamente
+                detectado tras aplicar B.3 aniquilación o B.5 complemento;
+                ejemplo: AND(x, NOT x) ≡ 0; OR(x, NOT x) ≡ 1).
+can_change      Redirigir consumidores del subgrafo hacia una rama del
+                circuito que ya produzca ese valor por complemento
+                (típicamente reutilizando una equivalencia disponible
+                en el cono lógico de la misma salida).
+                Si el valor constante solo se necesitaba para alimentar
+                otra rama, y la rama puede simplificarse via B.x, hacer
+                esa simplificación.
+must_not_change Comportamiento sobre cualquier entrada.
+                Identidad y semántica de puertos de salida del circuito.
 required_tests  Suite completa.
-equivalence_risk low.
+equivalence_risk low (la equivalencia constante se prueba algebraicamente).
 category        G — Constantes
 introduced_in   1.0.0
-notes           Permite que la salida del circuito sea una constante si la
-                tarea es trivial (constant_zero, constant_one).
+notes           Nunca introduce un nodo "constante" como SignalReference
+                en el `.aoncir`. Si el resultado de la transformación es
+                que un puerto de salida del circuito debe valer siempre 0
+                o 1, el circuito sigue conteniendo las compuertas que
+                producen ese valor (por ejemplo y = a AND NOT a). El
+                catálogo de tareas `constant_zero` y `constant_one` del
+                nivel 1 exige justamente esto.
 ```
 
-## G.2 — `constant_propagation`
+## G.2 — `constant_equivalent_propagation`
 
 ```
-id              constant_propagation
-name            Propagación de constantes
-goal            ↓ gate_count, exposición de oportunidades A.2 / B.x
-preconditions   Una señal tiene valor constante demostrable (no por
-                pliegue local sino por análisis del grafo, ej. tras
-                detectar que un puerto de entrada está fijado por la
-                tarea — caso raro en niveles iniciales).
-can_change      Sustituir referencias por la constante; aplicar G.1.
+id              constant_equivalent_propagation
+name            Propagación de subexpresión equivalente a constante
+goal            ↓ gate_count, exposición de oportunidades B.x
+preconditions   Una señal interna es demostrablemente equivalente a un
+                valor constante sobre todo el dominio (resultado de
+                análisis algebraico, no de fijación de puertos: AONIX no
+                "fija" entradas externas).
+can_change      Donde la señal alimente una compuerta cuya salida quede,
+                tras la sustitución algebraica, simplificable por B.2/B.3,
+                aplicar la simplificación.
 must_not_change Comportamiento.
-                Definición de puertos de entrada (no se "elimina" un
-                puerto aunque sea irrelevante; la tarea declara los
-                puertos).
+                Compuertas del grafo no dominadas por la equivalencia.
+                Puertos del circuito.
 required_tests  Suite completa.
 equivalence_risk low si el análisis de constancia es correcto.
 category        G — Constantes
 introduced_in   1.0.0
+notes           Igual que G.1: no introduce nodos constantes. Reformula
+                regiones del grafo.
 ```
 
 ---
 
 # Categoría H — Limpieza estructural
 
-## H.1 — `gate_arity_collapse`
+## H.1 — `gate_arity_collapse` (DESHABILITADA en Fase 1)
 
 ```
 id              gate_arity_collapse
 name            Colapso de aridad en cadenas asociativas
-goal            ↓ gate_count, ↓ depth
+status          DISABLED in Phase 1
+goal            (hipotético) ↓ gate_count, ↓ depth
 preconditions   Existe AND(AND(a, b), c) o forma equivalente con OR.
-can_change      Sustituir por AND(a, b, c) (n-ario) si la representación
-                interna lo admite y ofrece beneficios.
-must_not_change Comportamiento (asociatividad).
-                Etiquetas semánticas individuales si están asignadas a
-                las señales intermedias (la intermedia desaparece).
-required_tests  Suite completa.
-equivalence_risk low.
+can_change      (no aplicable) En Fase 1 AONIX usa aridad estricta
+                binaria para AND y OR (ver docs/01 §R2). No existe la
+                representación n-aria como destino legal de la
+                transformación; intentar producir AND(a, b, c) sería
+                un error de aridad rechazado por `Gate::new`.
+must_not_change Aridad binaria estricta.
+required_tests  N/A.
+equivalence_risk N/A.
 category        H — Limpieza
-introduced_in   1.0.0
-notes           Decisión de representación: si AONIX trabaja siempre con
-                AND/OR binarios, esta transformación se sustituye por F.1.
-                Si admite n-ario, esta transformación es la canónica.
-                Configurable por instalación.
+introduced_in   1.0.0 (catalogada para preservar coherencia con la
+                visión a largo plazo)
+notes           En Fase 1, la dirección útil es la opuesta: F.1
+                `narrow_to_balanced_tree` ya organiza cadenas lineales
+                en árboles binarios balanceados; eso se hace **sin
+                cambiar la aridad** de cada gate individual. Una
+                eventual extensión a primitivas n-arias en una
+                `format_version` superior requeriría un cambio
+                auditado de R2 (severidad S0 en docs/25: no auditable),
+                por lo que H.1 permanece deshabilitada indefinidamente
+                en la práctica.
 ```
 
 ## H.2 — `signal_renaming_normalization`
@@ -663,9 +709,9 @@ Estas prohibiciones se hacen cumplir por:
 | F.1 narrow_to_balanced_tree | F | ↓ depth | low |
 | F.2 tree_to_narrow_for_reuse | F | exponer reuso global | medium |
 | F.3 hoist_common_subterm | F | ↓ depth, exponer reuso | medium |
-| G.1 constant_folding | G | ↓ gate_count | low |
-| G.2 constant_propagation | G | ↓ gate_count | low |
-| H.1 gate_arity_collapse | H | ↓ gate_count | low |
+| G.1 constant_equivalent_subgraph_reduction | G | ↓ gate_count | low |
+| G.2 constant_equivalent_propagation | G | ↓ gate_count | low |
+| H.1 gate_arity_collapse (disabled) | H | N/A en Fase 1 | N/A |
 | H.2 signal_renaming_normalization | H | legibilidad | low (neutra) |
 | I.1 combinational_subgraph_optimization_in_temporal | I | ↓ métricas en parte comb. | medium |
 

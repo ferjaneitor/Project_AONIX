@@ -40,7 +40,7 @@ Cada transformación tiene **precondición**, **efecto** y **garantía de preser
 ### Eliminaciones
 
 - **Eliminación de señales muertas.** Precondición: una señal no alcanza ninguna salida del circuito. Efecto: eliminar la señal y sus compuertas productoras si no alimentan otra salida viva. Garantía: comportamiento idéntico en toda entrada.
-- **Eliminación de compuertas redundantes.** Precondición: una compuerta produce un valor constante o duplica otra señal disponible. Efecto: sustituir referencias por la fuente equivalente. Garantía: idéntica.
+- **Eliminación de compuertas redundantes.** Precondición: una compuerta produce un valor demostrablemente equivalente a otra señal ya disponible (por ejemplo, AND(x, x) ≡ x; AND(x, NOT x) ≡ 0). Efecto: redirigir los consumidores a la señal equivalente, eliminando la compuerta redundante y, si procede, propagando la eliminación (ver categoría A de [23 — Transformaciones del optimizador](23-optimizer-transformations.md)). En Fase 1, "constante" es propiedad emergente del análisis algebraico, no `SignalReference` primitiva: el optimizador transforma el grafo, no introduce nodos constantes. Garantía: comportamiento idéntico.
 - **Eliminación de doble negación.** Precondición: `NOT(NOT(x))`. Efecto: reemplazar por `x`. Garantía: idéntica.
 
 ### Aplicación de leyes booleanas (preservan comportamiento por definición)

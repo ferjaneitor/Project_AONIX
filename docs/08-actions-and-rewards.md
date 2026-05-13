@@ -8,9 +8,9 @@ Las acciones son la **única interfaz** entre un agente y AONIX. El validador la
 
 Estas acciones operan **exclusivamente** sobre las primitivas permitidas:
 
-- `create_gate_AND { id, inputs: [signal_id, signal_id, ...], output: signal_id }` — aridad ≥ 2.
-- `create_gate_OR { id, inputs: [signal_id, signal_id, ...], output: signal_id }` — aridad ≥ 2.
-- `create_gate_NOT { id, input: signal_id, output: signal_id }` — aridad 1.
+- `create_gate_AND { id, inputs: [signal_id, signal_id], output: signal_id }` — aridad **estricta 2** en Fase 1.
+- `create_gate_OR { id, inputs: [signal_id, signal_id], output: signal_id }` — aridad **estricta 2** en Fase 1.
+- `create_gate_NOT { id, input: signal_id, output: signal_id }` — aridad estricta 1.
 - `connect { from: signal_id, to: input_port_of_gate }` — conexión explícita si la representación lo requiere.
 - `declare_signal { id, semantic_tag?, group? }` — declarar una señal interna.
 - `assign_output { circuit_output: port_id, source: signal_id }` — atar una salida del circuito a una señal interna.
