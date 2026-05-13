@@ -122,56 +122,82 @@ Dos `.aoncir` con el mismo hash canónico son **estructuralmente equivalentes**.
 
 ## Esqueleto ilustrativo (no normativo)
 
-Solo a fines de comunicar la forma esperada; la sintaxis final se fijará cuando el usuario apruebe la alternativa de representación.
+Esqueleto **alineado con la sintaxis física aprobada** ([21 — Sintaxis física de `.aoncir`](21-aoncir-syntax.md)): arrays de tablas `[[ports.inputs]]` / `[[ports.outputs]]` para preservar el orden de aparición como contrato formal del vector, identificadores explícitos sin abreviaturas, y `bit_position` opcional para buses futuros.
 
 ```toml
+[format]
+format_version = "1.0.0"
+
 [meta]
-name = "one_bit_full_adder"
-version = "1.0.0"
-width = 1
-level = 7
-hash_canonical = "..."
-predecessor = []
-created_at = "2026-05-11T19:20:00Z"
+name           = "one_bit_full_adder"
+version        = "1.0.0"
+parameters     = { width = 1 }
+level          = 5
+hash_canonical = "blake3:..."
+predecessor    = ""
+created_at     = "2026-05-11T19:20:00Z"
 
-[ports.inputs]
-a       = { semantic_tag = "operand_bit" }
-b       = { semantic_tag = "operand_bit" }
-cin     = { semantic_tag = "carry" }
+# Orden de aparición = contrato del InputVector:
+# [ operand_a, operand_b, carry_input ]
 
-[ports.outputs]
-sum     = { semantic_tag = "sum_bit" }
-cout    = { semantic_tag = "carry" }
+[[ports.inputs]]
+name         = "operand_a"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "operand_b"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "carry_input"
+semantic_tag = "carry"
+group        = ""
+
+# Orden de aparición = contrato del OutputVector:
+# [ sum_output, carry_output ]
+
+[[ports.outputs]]
+name         = "sum_output"
+semantic_tag = "sum_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "carry_output"
+semantic_tag = "carry"
+group        = ""
 
 [[signals]]
-id = "s1"
+id = "operand_b_negated"
 [[signals]]
-id = "s2"
+id = "operand_a_and_operand_b_negated"
 # ... más señales internas
 
 [[gates]]
-id = "g1"
-kind = "NOT"
-inputs = ["b"]
-output = "nb"
+id     = "g1"
+kind   = "NOT"
+inputs = ["operand_b"]
+output = "operand_b_negated"
 
 [[gates]]
-id = "g2"
-kind = "AND"
-inputs = ["a", "nb"]
-output = "s1"
+id     = "g2"
+kind   = "AND"
+inputs = ["operand_a", "operand_b_negated"]
+output = "operand_a_and_operand_b_negated"
 
-# ... el grafo completo expandido a AND/OR/NOT, sin XOR
+# ... el grafo completo expandido a AND/OR/NOT.
+# Ninguna compuerta xor / nand / nor / xnor aparece en ningún nivel.
 
 [verification]
-suite = "exhaustive_3_inputs"
-passed = 8
-total = 8
-seed = null
+result = "PASS"
+suites = [
+    { id = "exhaustive_suite_8cases", version = "1.0.0", passed = 8, total = 8, seed = "" },
+]
 
 [metrics]
-gate_count = { AND = 5, OR = 2, NOT = 2 }
-depth = 4
+gate_count   = { AND = 6, OR = 3, NOT = 4, TOTAL = 13 }
+depth        = 5
 dead_signals = 0
 ```
 

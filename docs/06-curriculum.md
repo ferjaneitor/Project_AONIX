@@ -277,3 +277,88 @@ Si un agente, tras avanzar, empieza a fallar tareas que dominaba, el sistema **n
 - Pedir auditoría del modelo.
 
 El avance no se anula porque el avance es un hecho histórico (se ganó en su momento); pero la habilidad puede degradarse y el sistema lo detecta.
+
+---
+
+## Matriz normativa de criterios de avance por nivel
+
+> Esta matriz formaliza los umbrales por defecto que un agente debe cumplir para avanzar de un nivel a otro. Una tarea puede declarar umbrales más estrictos para sí misma, pero **nunca menos estrictos** que los del nivel. Los valores son orientativos y configurables por instalación; los **conceptos medidos** son fijos.
+
+| Nivel | Tasa de éxito mínima (tareas obligatorias) | Estabilidad bajo distintas semillas | Tasa máxima L0 (acción inválida) | Casos límite obligatorios | Mejora estructural mínima respecto al baseline | Explicación humana requerida |
+|-------|-------------------------------------------|------------------------------------|----------------------------------|---------------------------|------------------------------------------------|------------------------------|
+| 0 | 100% sobre comprensión del mundo formal | — | — | — | — | No |
+| 1 | 100% | ≥ 100% (espacio trivial) | ≤ 20% | todos | dentro del óptimo conocido | Opcional |
+| 2 | ≥ 95% de las 16 funciones de 2 entradas | ≥ 95% | ≤ 15% | todos los de 2 entradas | dentro del óptimo conocido por función | Opcional |
+| 3 | ≥ 90% | ≥ 90% | ≤ 15% | todos catalogados | dentro de 1.2× del óptimo conocido | Opcional |
+| 4 | ≥ 90% (multi-salida) | ≥ 90% | ≤ 15% | todos catalogados | reutilización demostrada entre salidas | Recomendable |
+| 5 | ≥ 90% (mux, comparador, full adder de 1 bit) | ≥ 90% | ≤ 12% | todos los del nivel | dentro de 1.3× del óptimo conocido | Recomendable |
+| 6 | ≥ 90% (con buses) | ≥ 90% | ≤ 12% | todos catalogados por bus | preservación de etiquetas semánticas | Recomendable |
+| 7 | ≥ 90% | ≥ 90% | ≤ 12% | aritméticos clave | propagación de carry estable | Sí |
+| 8 | ≥ 88% (multi-bit) | ≥ 88% | ≤ 12% | todos por width | escalabilidad demostrada | Sí |
+| 9 | ≥ 90% (flags) | ≥ 90% | ≤ 10% | flags en cada caso aritmético | flags coherentes con semántica | Sí |
+| 10 | ≥ 85% (ALU completa) | ≥ 85% | ≤ 10% | todos los opcodes × valores extremos | reutilización entre opcodes | Sí |
+| 11 | ≥ 85% (estado y reloj) | ≥ 85% | ≤ 10% | reset, enable, secuencias | sin glitches modelados | Sí |
+| 12 | ≥ 85% (memoria) | ≥ 85% | ≤ 10% | direcciones extremas, secuencias | comportamiento determinista | Sí |
+| 13 | ≥ 80% (CPU mínima) | ≥ 80% | ≤ 10% | programas mínimos, casos arquitectónicos | datapath funcional | Sí |
+
+### Notas sobre la matriz
+
+1. **Tasa de éxito** se evalúa sobre el conjunto de **tareas obligatorias** del nivel. Las tareas opcionales no cuentan para el umbral pero sí registran progreso.
+2. **Estabilidad** mide la consistencia bajo distintas semillas aleatorias de pruebas reproducibles; la tasa de éxito debe mantenerse dentro de una banda razonable entre semillas.
+3. **Tasa L0** es el porcentaje de acciones que el validador rechaza por acción inválida (excluye intentos categóricamente prohibidos como XOR/NAND/etc., que producen penalización aparte). Una tasa L0 alta indica falta de comprensión del nivel.
+4. **Mejora estructural mínima** respecto al baseline: el "baseline" es el oficial activo conocido al momento del avance. No promover, pero igualar dentro del rango indicado, es aceptable.
+5. **Explicación humana requerida**: niveles ≥ 7 exigen que el traductor humano pueda generar explicación coherente del circuito producido por el agente (ver [11 — Capa de traducción humana](02-architecture.md)).
+
+## Catálogo de criterios complementarios (no exclusivos)
+
+Además de la matriz, el sistema curricular puede aplicar:
+
+- **Cobertura del espacio de tareas**: el agente debe haber intentado un mínimo de variantes/parámetros del nivel.
+- **Diversidad de soluciones**: el agente no debe repetir literalmente la misma estructura para todas las tareas (anti-overfitting a un patrón).
+- **Resolución de casos límite específicos** declarados por nivel.
+- **Velocidad media de convergencia**: número medio de acciones hasta el cierre exitoso; mejora respecto a niveles previos.
+- **Mantenimiento del dominio anterior**: el agente debe seguir pasando, con muestreo aleatorio, tareas de niveles inferiores ya superados.
+
+## Plantilla normativa de criterios (formato Task)
+
+Cuando una tarea declara sus criterios de avance específicos, usa este esquema (consistente con [12 — Especificación formal de tareas](12-task-specification.md)):
+
+```
+advancement_contribution: {
+    required_for_level_pass:      true | false
+    minimum_pass_rate_local:      0.0..=1.0
+    edge_cases_blocking:          [CaseId]
+    stability_minimum:            0.0..=1.0
+    structural_thresholds:        {Metric -> Threshold}
+    explanation_required:         true | false
+    diversity_pool_assignment:    PoolId?
+}
+```
+
+## Procedimiento de evaluación de avance
+
+```
+1.  Al cerrar cada episodio del agente en su nivel actual,
+    el coordinador actualiza memoria curricular del agente.
+2.  Cuando se alcanzan las tareas obligatorias intentadas:
+    a. Calcular tasa de éxito local.
+    b. Calcular estabilidad bajo distintas semillas.
+    c. Calcular tasa L0.
+    d. Comprobar casos límite obligatorios superados.
+    e. Comprobar umbrales estructurales.
+    f. Comprobar requisito de explicación si aplica.
+    g. Comprobar diversidad si aplica.
+    h. Comprobar mantenimiento de niveles previos.
+3.  Si TODOS los criterios se cumplen ⇒ avance autorizado;
+    el siguiente nivel se desbloquea.
+4.  Si ALGUNO no se cumple ⇒ no avance; el sistema reporta cuál falta
+    y registra en memoria curricular el motivo.
+5.  Sin tiempos. Sin presión. El agente puede tomar el tiempo que necesite.
+```
+
+## Lo que el avance **nunca** implica
+
+- Que el agente domine tareas de niveles futuros (debe demostrarlo en su momento).
+- Que el agente pueda saltarse niveles (cada nivel requiere demostración).
+- Que el agente pueda usar primitivas del nivel sin pasar por el validador.
+- Que el agente reciba acceso a soluciones de tareas que aún no resolvió.

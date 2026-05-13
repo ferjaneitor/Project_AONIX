@@ -57,6 +57,7 @@ Formatos canónicos:
 
 - [03 — Formato `.aoncir`](docs/03-format-aoncir.md)
 - [04 — Formato `.aonclg`](docs/04-format-aonclg.md)
+- [17 — Relación formal entre `.aoncir` y `.aonclg`](docs/17-aoncir-aonclg-relationship.md)
 
 Subsistemas:
 
@@ -67,10 +68,29 @@ Subsistemas:
 - [09 — Visualización 2D con Vulkan](docs/09-visualization-vulkan.md)
 - [10 — Coordinador central](docs/10-coordinator.md)
 
+Especificaciones formales (consolidación):
+
+- [12 — Especificación formal de tareas](docs/12-task-specification.md)
+- [13 — Reglas de aceptación de un circuito](docs/13-circuit-acceptance.md)
+- [14 — Reglas de rechazo](docs/14-circuit-rejection.md)
+- [15 — Reglas de optimización](docs/15-optimization-rules.md)
+- [16 — Límites de visibilidad para la IA](docs/16-ai-visibility-limits.md)
+- [18 — Memoria operativa vs no operativa](docs/18-operational-vs-non-operational-memory.md)
+- [19 — Política de versionado (oficial activo vs histórica)](docs/19-versioning-policy.md)
+
+Cierre normativo concreto (catálogos y políticas):
+
+- [20 — Catálogo inicial de tareas (niveles 0–5)](docs/20-task-catalog-levels-0-5.md)
+- [21 — Sintaxis física de `.aoncir` (TOML inicial)](docs/21-aoncir-syntax.md)
+- [22 — Catálogo de casos límite por familia](docs/22-edge-case-catalog.md)
+- [23 — Catálogo de transformaciones del optimizador](docs/23-optimizer-transformations.md)
+- [24 — Convenciones de etiquetas semánticas](docs/24-semantic-tag-conventions.md)
+- [25 — Política de auditoría humana](docs/25-human-audit-policy.md)
+
 Operativa:
 
 - [11 — Hoja de ruta por fases](docs/11-roadmap.md)
-- [Glosario AONIX](docs/glossary.md)
+- [Glosario AONIX (normativo)](docs/glossary.md)
 
 ---
 

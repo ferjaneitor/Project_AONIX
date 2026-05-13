@@ -231,3 +231,103 @@ Toda ejecución de prueba registra:
 - Hash de la suite usada.
 
 Cualquiera puede reproducir el resultado bit a bit.
+
+---
+
+## Matriz normativa de pruebas por nivel
+
+> Esta matriz consolida, por nivel curricular, **qué tipos de prueba son obligatorios**, **qué son recomendados** y **qué umbrales mínimos aplican**. Una tarea individual puede exigir más, **nunca menos**.
+
+Leyenda: **O** = obligatorio, **R** = recomendado, **N/A** = no aplicable, **C** = condicional según tamaño/parámetros de la tarea.
+
+| Nivel | Exhaustiva | Aleatoria con semilla (≥ N) | Casos límite catalogados | Regresión (por circuito + familia) | Modelo de referencia | Pruebas por propiedades | Verificación modular | Validación incremental | Validación por señal semántica | Temporal |
+|------:|:----------:|:---------------------------:|:------------------------:|:----------------------------------:|:--------------------:|:-----------------------:|:--------------------:|:----------------------:|:------------------------------:|:--------:|
+| 0 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| 1 | O (≤2) | N/A | O (todo-cero, todo-uno) | O | N/A | N/A | N/A | R | N/A | N/A |
+| 2 | O (≤4) | N/A | O | O | R | N/A | N/A | R | N/A | N/A |
+| 3 | O (≤8) | C (si ≥3 entradas) | O | O | R | R | N/A | R | N/A | N/A |
+| 4 | O (≤16) | R | O | O | R | R | R | O | R (por salida) | N/A |
+| 5 | O (≤16) | R | O | O | O | R | R | O | R | N/A |
+| 6 | C | O (≥ 1 000) | O por bus | O | O | R | R | O | O (etiquetas de bus) | N/A |
+| 7 | O (≤256) | O (≥ 5 000) | O aritméticos | O | O | O | O por bloque | O | O (carry) | N/A |
+| 8 | C (≤2¹⁶ por width) | O (≥ 10 000) | O por width | O por width | O | O | O | O | O (carry/sum) | N/A |
+| 9 | C | O (≥ 10 000) | O por flag | O | O | O | O | O | O (todas las flags) | N/A |
+| 10 | C (por opcode × valores) | O (≥ 20 000) | O por opcode | O | O | O | O por bloque | O | O (flags + opcode) | N/A |
+| 11 | N/A para el todo | O (secuencias ≥ 1 000) | O reset/enable | O | O | O temporal | O por bloque | O | O temporal | O |
+| 12 | N/A | O (≥ 5 000 secuencias) | O direcciones extremas | O | O | O | O | O | O (read/write) | O |
+| 13 | N/A | O (≥ 10 000 ciclos en programas) | O programas mínimos | O | O (modelo arquitectónico) | O | O por bloque arquitectónico | O | O (PC, registros, flags) | O |
+
+### Notas sobre la matriz
+
+1. **Exhaustiva** se entiende como cubrir todas las combinaciones de entradas; en niveles donde el espacio es manejable (≤ ~2²⁰ con margen) sigue siendo factible. Por encima, se complementa con aleatoria + modelo + propiedades.
+2. **Aleatoria con semilla** especifica un número mínimo de vectores aleatorios reproducibles; el `seed_strategy` de la tarea fija la semilla.
+3. **Casos límite catalogados** crece con el sistema. Toda entrada que en algún momento detectó un bug en cualquier circuito de la familia se incorpora y permanece.
+4. **Regresión** combina la suite específica del circuito y la suite de la familia.
+5. **Modelo de referencia** vuelve obligatorio en cuanto entran sumadores/comparadores y se mantiene en niveles superiores.
+6. **Pruebas por propiedades** son cuantificaciones (∀ vectores: prop. P se cumple). En nivel ≥ 4 son recomendables; ≥ 7 obligatorias.
+7. **Verificación modular**: para circuitos con jerarquía conceptual (mux, full adders compuestos, ALUs, etc.) se verifica cada bloque internamente, luego la composición.
+8. **Validación incremental**: durante construcción interactiva, re-verifica solo conos lógicos afectados por el último cambio. Recomendable desde nivel 1, obligatoria desde nivel 4.
+9. **Validación por señal semántica**: si la tarea declara etiquetas como `carry`, `zero`, `overflow`, esas señales deben comportarse según su etiqueta. Obligatoria a partir del nivel donde aparecen.
+10. **Temporal**: a partir del nivel 11 entra el modo temporal del simulador y la verificación se extiende a secuencias.
+
+## Umbrales por defecto de cobertura aleatoria
+
+| Bits de entrada combinacional | Exhaustiva viable | Vectores aleatorios mínimos si no exhaustiva |
+|------------------------------:|:-----------------:|:--------------------------------------------:|
+| ≤ 12 | Sí | — |
+| 13–16 | Sí (con coste) | — |
+| 17–20 | Límite | 5 000 |
+| 21–24 | No | 10 000 |
+| 25–32 | No | 20 000 |
+| > 32 | No | 50 000 + dirigidas |
+
+Estos umbrales son configurables por instalación; los **conceptos** son fijos.
+
+## Composición de la decisión final del verificador
+
+Para una tarea dada, el verificador entrega **PASA** si y solo si:
+
+```
+PASA  ⟺  ∀ suite ∈ task.required_test_suites :
+            suite_resultado(circuito, suite) == PASA
+       ∧  ∀ caso ∈ catalogo_de_casos_limite[task.level] :
+            caso.blocking == true ⟹ caso_resultado(circuito, caso) == PASA
+       ∧  ∀ propiedad ∈ task.properties :
+            propiedad_resultado(circuito, propiedad) == PASA
+       ∧  ∀ sig ∈ task.semantic_signals_to_check :
+            sig.checker(circuito) == PASA
+       ∧  comparacion_referencia(circuito, task.reference_model) == PASA   (si aplica)
+       ∧  ¬regresion_contra_oficial_activo(circuito, task)
+       ∧  (si tarea es temporal) verificacion_temporal(circuito, task) == PASA
+```
+
+Cualquier conjunción que falle ⇒ FALLA. Sin grises.
+
+## Estrategias de selección de casos aleatorios
+
+Cuando la aleatoria reemplaza a la exhaustiva, AONIX usa selección **estratificada**:
+
+- Cobertura uniforme del espacio de entrada.
+- Sobre-muestreo de regiones cercanas a casos límite conocidos.
+- Mezcla de patrones (alternados, valores extremos, single-bit, etc.).
+- Inclusión obligatoria de casos del catálogo si la tarea lo declara.
+
+La selección está determinada por la semilla; misma semilla ⇒ mismos vectores ⇒ mismos resultados.
+
+## Política sobre tiempos de verificación
+
+| Nivel | Tiempo de verificación orientativo |
+|-------|------------------------------------|
+| 0–3 | < 100 ms |
+| 4–6 | < 1 s |
+| 7–10 | < 30 s |
+| 11–13 | < 5 min (incluye secuencias temporales y programas) |
+
+Los tiempos son orientativos. Si una verificación tarda significativamente más de lo previsto, AONIX no aborta automáticamente; reporta el tiempo en el reporte de verificación para análisis.
+
+## Lo que la matriz **no** permite
+
+- Reducir el conjunto obligatorio.
+- Saltarse la verificación por señal semántica cuando hay etiquetas declaradas.
+- Aceptar una solución parcialmente correcta como "casi pasa".
+- Sustituir verificación funcional por mejora estructural (correctitud manda).

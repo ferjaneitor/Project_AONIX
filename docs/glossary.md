@@ -1,6 +1,8 @@
 # Glosario AONIX
 
-Términos centrales del proyecto. Cuando un documento usa uno de estos términos, debe entenderse según esta definición.
+> **Documento normativo.** Las definiciones aquí establecidas son **autoritativas**. Cuando cualquier otro documento del proyecto usa uno de estos términos debe entenderse exactamente según esta definición. Cuando un documento parezca contradecir el glosario, el glosario manda; el otro documento se corrige.
+>
+> El glosario se amplía añadiendo entradas. Modificar una entrada existente requiere auditoría: el término puede haber sido referenciado desde el código, los tests o los `.aoncir`/`.aonclg` ya producidos.
 
 ---
 
@@ -111,3 +113,79 @@ Términos centrales del proyecto. Cuando un documento usa uno de estos términos
 **Visualizador.** Capa Vulkan 2D que renderiza el mundo formal. No decide, no verifica, no altera. Ver [09](09-visualization-vulkan.md).
 
 **Vulkan.** API gráfica 2D usada por AONIX. Backend exacto (`ash`, `wgpu`, `vulkano`) pendiente de decisión.
+
+---
+
+## Términos adicionales (consolidación normativa)
+
+**AgentVisibilitySet.** Conjunto enumerable de fuentes de información que un agente puede leer durante un episodio. Definido por la tarea y modulable por modos del currículo. Ver [16](16-ai-visibility-limits.md).
+
+**Atajo (operativo).** Información que, entregada a un agente durante un episodio activo, le permitiría producir la solución sin construirla. Prohibido. Ver [16](16-ai-visibility-limits.md), [18](18-operational-vs-non-operational-memory.md).
+
+**Bloqueante (caso límite).** Caso límite cuya superación es condición necesaria para que el verificador entregue PASA. Si falla, el circuito se rechaza. Ver [07](07-testing-and-verification.md).
+
+**Capa de aceptación.** Una de las dos puertas formales (estructural y funcional+calidad) por las que pasa un circuito antes de ser aceptado. Ver [13](13-circuit-acceptance.md).
+
+**Capa de rechazo (L0–L5).** Niveles de rechazo formal en AONIX, desde acción individual rechazada por validador hasta tarea rechazada por cargador. Ver [14](14-circuit-rejection.md).
+
+**Catálogo de tareas.** Conjunto versionado de declaraciones formales de tareas disponibles en AONIX. Ver [12](12-task-specification.md).
+
+**Catálogo de transformaciones.** Conjunto de transformaciones del optimizador, con precondición, efecto y garantía de preservación de comportamiento. Ver [15](15-optimization-rules.md).
+
+**Degradado (oficial activo).** Estado de un `.aoncir` oficial activo que falla una re-verificación con suite ampliada. Inicia proceso de revisión humana. Ver [19](19-versioning-policy.md).
+
+**Diff visual (modo).** Estado del visualizador que muestra diferencias entre dos versiones (típicamente antes/después de una optimización o versión histórica vs oficial activa). Ver [09](09-visualization-vulkan.md).
+
+**Episodio cerrado.** Episodio cuya secuencia de acciones terminó y cuyo `.aonclg` quedó escrito de forma inmutable. Ver [10](10-coordinator.md), [17](17-aoncir-aonclg-relationship.md).
+
+**Estado parcial.** Estado intermedio del circuito durante la construcción de un episodio. No es una versión canónica ni histórica. Puede serializarse para snapshots. Ver [12](12-task-specification.md).
+
+**Familia (de circuitos).** Conjunto de circuitos compuestos que comparten nombre y semántica pero difieren en parámetros (típicamente `width`). Comparten suites de regresión y modelos de referencia. Ver [19](19-versioning-policy.md).
+
+**Filtración (test de).** Test del propio AONIX que verifica que ningún canal lateral entrega información no operativa al agente. Ver [16](16-ai-visibility-limits.md).
+
+**Huérfano (`.aonclg`).** `.aonclg` cuyo `.aoncir` referenciado ha sido eliminado por operación administrativa. Se marca como huérfano y se conserva. Ver [17](17-aoncir-aonclg-relationship.md).
+
+**Identidad estructural.** Equivalencia entre dos circuitos basada en el `hash_canonical`. Dos circuitos con el mismo hash son **la misma versión** desde el punto de vista de memoria canónica. Ver [03](03-format-aoncir.md), [19](19-versioning-policy.md).
+
+**Inmutabilidad de cierre.** Propiedad por la cual un `.aonclg` ya cerrado **no puede modificarse**. Garantía de auditoría histórica. Ver [04](04-format-aonclg.md), [17](17-aoncir-aonclg-relationship.md).
+
+**Memoria operativa.** Memoria cuyo contenido se entrega al agente durante un episodio activo. Ver [18](18-operational-vs-non-operational-memory.md).
+
+**Memoria no operativa.** Memoria que existe, se conserva y se audita, pero **no se entrega** al agente durante un episodio activo. Ver [18](18-operational-vs-non-operational-memory.md).
+
+**Modo guided-onboarding.** Modo de currículo en niveles iniciales que permite mostrar fragmentos de soluciones modelo como ilustración pedagógica, sin convertirlos en compuertas reutilizables. Ver [16](16-ai-visibility-limits.md).
+
+**Modo post-mortem.** Modo posterior al cierre de un episodio fallido que entrega información adicional al agente sobre causas de fallo, sin entregar la solución. Ver [16](16-ai-visibility-limits.md).
+
+**Modo review-after-solve.** Modo posterior al cierre exitoso de un episodio que permite al agente comparar su solución con el oficial activo. Ver [16](16-ai-visibility-limits.md).
+
+**Modo study-historical.** Modo que permite a un agente examinar versiones históricas para análisis, fuera de episodios activos sobre la misma tarea. Ver [16](16-ai-visibility-limits.md).
+
+**Modelo visual normativo.** Especificación independiente del backend gráfico del modelo 2D de elementos visuales y sus reglas. Ver [09](09-visualization-vulkan.md) § Modelo visual 2D formal.
+
+**Promoción atómica.** Transacción transaccional que mueve una versión nueva a oficial activa y archiva la incumbente. O ocurre íntegra, o no ocurre. Ver [19](19-versioning-policy.md).
+
+**Puerta de aceptación.** Conjunto de condiciones formales que un circuito debe satisfacer en un punto del pipeline. AONIX tiene puerta estructural, puerta funcional+calidad y puerta de promoción. Ver [13](13-circuit-acceptance.md).
+
+**Ranking order.** Orden lexicográfico declarado por una tarea sobre las métricas del evaluador, usado para decidir si una versión mejora estrictamente a otra. Ver [13](13-circuit-acceptance.md), [19](19-versioning-policy.md).
+
+**Reward hacking.** Patrón de comportamiento de un agente que maximiza recompensa sin cumplir la meta real (p.ej. inflando métricas sin pasar el verificador). AONIX lo cierra por construcción mediante validador, verificador y separación de roles. Ver [08](08-actions-and-rewards.md), [16](16-ai-visibility-limits.md).
+
+**Solución aceptada.** Circuito que pasa puerta estructural y puerta funcional+calidad. No implica promoción; puede quedar como solución no promovida si no mejora al oficial activo. Ver [13](13-circuit-acceptance.md).
+
+**Solución promovida.** Solución aceptada que además mejora estrictamente al oficial activo según el `ranking_order` y supera la puerta de promoción del coordinador. Reemplaza al oficial activo. Ver [13](13-circuit-acceptance.md), [19](19-versioning-policy.md).
+
+**Specification (Spec).** Descripción formal del comportamiento esperado de un circuito. Puede ser tabla de verdad, lista de propiedades, función de referencia, circuito de referencia o spec temporal. Ver [12](12-task-specification.md).
+
+**Suite de regresión.** Conjunto acumulativo append-only de casos de prueba que en algún momento detectaron un fallo. Crece con el sistema; nunca se reduce sin justificación auditable. Ver [07](07-testing-and-verification.md).
+
+**TemporalSpec.** Especificación de comportamiento de tareas temporales, evaluada sobre secuencias de ciclos en lugar de vectores únicos. Aplica a niveles ≥ 11. Ver [12](12-task-specification.md).
+
+**Transformación legítima.** Transformación del catálogo del optimizador con garantía de preservación de comportamiento por vía algebraica y vía verificación. Ver [15](15-optimization-rules.md).
+
+**Veredicto del verificador.** Decisión binaria PASA o FALLA emitida por el verificador sobre un circuito con respecto a una suite. Único determinante de la corrección. Ver [07](07-testing-and-verification.md).
+
+**Versión experimental.** Versión verificada pero no promovida (por L2 o L4). Vive en memoria experimental. Ver [14](14-circuit-rejection.md), [19](19-versioning-policy.md).
+
+**Withdrawn (versión).** Marca aplicada a una versión que fue oficial activa pero se reveló defectuosa (bug del propio AONIX). No se borra; se desactiva con causa. Ver [19](19-versioning-policy.md).

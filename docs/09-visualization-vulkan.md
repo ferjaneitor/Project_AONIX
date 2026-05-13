@@ -178,3 +178,175 @@ Esta separación garantiza que **borrar todos los layouts no afecta la verdad t�
 - Captura de "highlight reels" de un agente aprendiendo (replays editables del `.aonclg`).
 - Modo presentación para docencia.
 - Dashboard de seguimiento de progreso curricular agregado.
+
+---
+
+## Modelo visual 2D formal
+
+> Esta sección define el **modelo visual normativo** de AONIX. Es el contrato que cumple cualquier implementación de la capa de visualización, independiente del backend Vulkan elegido.
+
+### Espacio del modelo visual
+
+El modelo visual vive en un espacio cartesiano 2D:
+
+```
+VisualSpace = ℝ²
+```
+
+Las posiciones son pares `(x, y)`. La unidad es abstracta (cell unit); la pantalla se proyecta con escalado en el momento del render. **No existe profundidad z** en la verdad técnica visual; cualquier ordenamiento Z entre capas es una preocupación del renderer, no del modelo.
+
+### Elementos visuales primarios
+
+```
+VisualElement = OneOf {
+    GateNode {
+        gate_ref:    GateId         # referencia al nodo del .aoncir
+        kind:        AND | OR | NOT
+        position:    (x, y)
+        size:        (w, h)         # implícito por kind si no se sobrescribe
+        rotation:    0 | 90 | 180 | 270
+        style:       StyleRef
+        decoration:  [Decoration]   # halo, marca, badge
+    }
+  | PortNode {
+        port_ref:    PortId
+        role:        Input | Output
+        position:    (x, y)
+        semantic_tag: SemanticTag?
+        group:       GroupId?
+    }
+  | SignalEdge {
+        signal_ref:  SignalId
+        path:        [(x, y)]       # polilínea 2D
+        style:       StyleRef
+        thickness:   Float
+        annotations: [EdgeAnnotation]
+    }
+  | RegionBox {
+        bbox:        ((x1,y1), (x2,y2))
+        kind:        Bus | Cone | Block | Subcircuit | Highlight
+        label:       String?
+        opacity:     0..=1
+        style:       StyleRef
+    }
+}
+```
+
+**Ningún elemento visual representa una primitiva distinta de AND, OR, NOT.** Si una visualización agrupa varias compuertas con un icono "estilo XOR", **el icono es una decoración de región**, no un GateNode. La verdad estructural permanece en el grafo subyacente y en el `.aoncir`.
+
+### Reglas estructurales del modelo visual
+
+1. **Cobertura completa.** Para todo nodo del grafo del `.aoncir` existe exactamente **un** `GateNode` en el modelo visual.
+2. **Cobertura completa de puertos.** Para todo puerto del circuito existe exactamente **un** `PortNode`.
+3. **Cobertura de señales.** Para toda señal existe **al menos un** `SignalEdge` (puede haber múltiples si la señal se ramifica visualmente; conceptualmente representan la misma señal).
+4. **Sin nodos visuales sin grafo subyacente.** No se permite "añadir" un `GateNode` que no exista en el `.aoncir`. La visualización **espeja**, no inventa.
+5. **Posiciones 2D válidas.** Toda posición pertenece al espacio 2D. No hay coordenadas no finitas, no hay `z`.
+6. **Regiones no son operaciones.** Una `RegionBox` puede agrupar visualmente, pero no representa una compuerta nueva ni afecta la simulación.
+
+### Capas (Z-order lógico)
+
+El renderer organiza la composición visual en **capas lógicas**. El orden de las capas es fijo por especificación; la implementación física en Vulkan respeta este orden.
+
+```
+Z0  fondo
+Z1  regiones (buses, bloques, subcircuitos como decoración)
+Z2  aristas (signal edges)
+Z3  nodos (gates + ports)
+Z4  decoraciones de nodo (badges, marcas)
+Z5  overlays de simulación (resaltado de flujo activo)
+Z6  overlays de comparación (diff antes/después, regresión)
+Z7  selección e interacción (cursores, halos de hover)
+Z8  HUD (paneles laterales, métricas, controles)
+```
+
+Capas Z0–Z4 representan el **modelo del circuito**. Capas Z5–Z8 son **observación**.
+
+### Estilo y semántica visual normativos
+
+| Concepto | Convención visual normativa |
+|---------|------------------------------|
+| `AND` | Forma con lado plano y curva semicircular (convención clásica), color reservado A |
+| `OR` | Forma con cola convexa y entrada cóncava (convención clásica), color reservado B |
+| `NOT` | Triángulo con círculo de inversión, color reservado C |
+| Puerto de entrada | Marcador a la izquierda del circuito, color D |
+| Puerto de salida | Marcador a la derecha del circuito, color E |
+| Señal activa = 1 | Color F (alto contraste con inactivo) |
+| Señal activa = 0 | Color G |
+| Señal no evaluada | Color H (atenuado) |
+| Señal etiquetada `clock` | Patrón rítmico discreto o color reservado |
+| Señal etiquetada `carry` | Color reservado para flags aritméticas |
+| Señal etiquetada `bus` | Grosor de arista incrementado, etiqueta con `width` |
+| Camino crítico | Color de acento, grosor incrementado |
+| Compuerta redundante detectada | Halo de advertencia |
+| Señal muerta | Atenuada al 30% de opacidad |
+| Diferencia entre esperado y producido | Halo rojo en el nodo discrepante |
+
+Los colores concretos los elige la paleta activa (configurable; al menos una paleta accesible para daltonismo). La **identidad conceptual** del color (qué representa) es normativa.
+
+### Geometría de las aristas
+
+Las aristas usan **enrutamiento ortogonal por defecto**: segmentos horizontales y verticales. Las variantes diagonales son aceptables en modos específicos (layout force-directed, p. ej.) pero el enrutamiento ortogonal es el canónico.
+
+Reglas:
+
+- Sin solapamiento de aristas a menos que la densidad lo obligue.
+- Cruces marcados con "puente" (curva pequeña en una de las dos aristas).
+- Bus etiquetado dibujado como conjunto de aristas paralelas con marca de ancho.
+
+### Determinismo del layout
+
+Para una estrategia de layout dada y un `.aoncir` dado, el resultado visual es **determinista**. Esto permite:
+
+- Snapshot reproducible.
+- Tests visuales por diferencia de imagen (con tolerancia).
+- Comparación frame a frame entre versiones.
+
+Excepción: el layout `force-directed` puede usar inicialización aleatoria; en ese caso requiere **semilla explícita** y se registra para reproducibilidad.
+
+### Anclaje al modelo lógico
+
+Cada `VisualElement` mantiene un puntero al elemento del grafo que representa (`gate_ref`, `port_ref`, `signal_ref`). Eliminar un elemento del grafo elimina su representación visual; añadir uno al grafo lo añade. **El modelo visual es siempre coherente con el modelo lógico**, garantizado por construcción.
+
+### Estados de la visualización
+
+El visualizador puede estar en uno de los siguientes estados (no excluyentes en su mayoría):
+
+- **Static**: render del circuito sin animación.
+- **Simulating**: una entrada propagándose; señales se actualizan secuencialmente.
+- **Comparing**: dos circuitos lado a lado o superpuestos.
+- **Replaying**: trayectoria del `.aonclg` paso a paso.
+- **Highlighting**: cono lógico, camino crítico, región seleccionada destacada.
+- **DiffMode**: cambios respecto a versión anterior (regiones añadidas/eliminadas/modificadas).
+- **InteractiveBuild**: el agente añade/quita elementos (con validación por acción legal).
+
+### Modelo de interacción
+
+Cada interacción del usuario es:
+
+1. **Visual-side intent** (clic, hover, drag).
+2. **Mapped to a logical query** (¿qué nodo?, ¿qué cono?, ¿qué acción legal?).
+3. **Routed to the appropriate module** (validador para construcción, simulador para test, traductor para explicación).
+4. **Result rendered as updated visual state**.
+
+Las interacciones **no** modifican directamente el `.aoncir`. Cualquier modificación pasa por una acción formal validada (ver [08](08-actions-and-rewards.md)).
+
+### Garantías del modelo visual
+
+1. **Cobertura total**: todo lo del modelo lógico se puede ver.
+2. **Fidelidad estructural**: lo que se ve corresponde a la verdad técnica.
+3. **No invención**: el visualizador no añade nodos lógicos.
+4. **Sin invención de primitivas**: las decoraciones no representan compuertas nuevas.
+5. **Determinismo**: misma entrada visual + mismo modelo lógico ⇒ misma imagen (módulo tolerancia de render).
+6. **Reversibilidad**: cualquier vista puede recalcularse desde el `.aoncir`; el modelo visual es derivado.
+
+### Lo que el modelo visual **no** puede hacer
+
+- Mostrar un nodo de tipo distinto de AND/OR/NOT como si fuera una primitiva.
+- Ocultar permanentemente compuertas reales (puede colapsar regiones, pero el desglose siempre está disponible).
+- Diferir de la verdad técnica.
+- Funcionar como fuente para reconstruir el `.aoncir` (es derivado, no fuente).
+- Decidir corrección, métricas o promoción.
+
+### Decisión pendiente
+
+El **backend gráfico** concreto (`ash`, `wgpu`, `vulkano`) sigue como decisión documentada pero no fijada. Ver [11 — Roadmap, decisiones pendientes](11-roadmap.md). El modelo visual normativo definido aquí es **independiente del backend**.
