@@ -1,0 +1,35 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "gate_output_collides_with_port_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 1
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "data_input"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[signals]]
+id = "scratch_signal"
+
+# The gate writes directly to "data_output", which is a declared PORT.
+# Gate outputs must be internal signals, never ports.
+[[gates]]
+id     = "g_invert"
+kind   = "NOT"
+inputs = ["data_input"]
+output = "data_output"
+
+[[outputs]]
+port   = "data_output"
+source = "scratch_signal"

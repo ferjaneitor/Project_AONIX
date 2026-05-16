@@ -1,0 +1,72 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "multiplexer_2_to_1"
+version        = "1.0.0"
+parameters     = {}
+level          = 5
+task_id        = "multiplexer_2_to_1"
+hash_canonical = "blake3:placeholder"
+predecessor    = ""
+author         = "phase_1_b_seed"
+created_at     = "2026-05-13T00:00:00Z"
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "data_input_zero"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "data_input_one"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "select_input"
+semantic_tag = "select"
+group        = ""
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[signals]]
+id = "select_input_negated"
+[[signals]]
+id = "gated_data_zero"
+[[signals]]
+id = "gated_data_one"
+[[signals]]
+id = "data_output_internal"
+
+[[gates]]
+id     = "g_negate_select"
+kind   = "NOT"
+inputs = ["select_input"]
+output = "select_input_negated"
+
+[[gates]]
+id     = "g_gate_data_zero"
+kind   = "AND"
+inputs = ["select_input_negated", "data_input_zero"]
+output = "gated_data_zero"
+
+[[gates]]
+id     = "g_gate_data_one"
+kind   = "AND"
+inputs = ["select_input", "data_input_one"]
+output = "gated_data_one"
+
+[[gates]]
+id     = "g_combine"
+kind   = "OR"
+inputs = ["gated_data_zero", "gated_data_one"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"

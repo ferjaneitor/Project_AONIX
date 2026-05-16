@@ -1,0 +1,38 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "inverter"
+version        = "1.0.0"
+parameters     = {}
+level          = 1
+task_id        = "inverter"
+hash_canonical = "blake3:placeholder"
+predecessor    = ""
+author         = "phase_1_b_seed"
+created_at     = "2026-05-13T00:00:00Z"
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "data_input"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[signals]]
+id = "data_output_internal"
+
+[[gates]]
+id     = "g_invert"
+kind   = "NOT"
+inputs = ["data_input"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"
