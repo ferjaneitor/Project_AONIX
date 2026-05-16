@@ -20,12 +20,14 @@ use std::collections::HashSet;
 
 use crate::circuit_model::{
     AonixError, AonixResult, Circuit, CircuitBuilder, Gate, GateIdentifier, GateKind,
-    GroupIdentifier, Port, PortIdentifier, PortRole, SemanticTag, Signal, SignalIdentifier,
+    GroupIdentifier, Port, PortIdentifier, PortRole, SemanticGroup, SemanticGroupIdentifier,
+    SemanticGroupKind, SemanticGroupMember, SemanticTag, Signal, SignalIdentifier,
     SignalReference,
 };
 
 use super::schema::{
-    AoncirDocument, GateEntry, OutputAssignmentEntry, PortEntry, SignalEntry,
+    AoncirDocument, GateEntry, OutputAssignmentEntry, PortEntry, SemanticGroupEntry,
+    SignalEntry,
 };
 
 /// The only `format_version` accepted by the Phase 1 parser.
@@ -95,7 +97,27 @@ pub fn parse(input: &str) -> AonixResult<Circuit> {
         builder.assign_output(port_identifier, source_reference)?;
     }
 
+    // Propagate semantic groups in declared order. validate_document has
+    // already checked their consistency (unique id, allowed kind, member
+    // existence, width, bit_position); here we only carry the canonical
+    // truth into the Circuit so the writer (Sub-phase 1.D) can regenerate
+    // a valid `.aoncir`.
+    for entry in &document.semantic_groups {
+        builder.add_semantic_group(build_semantic_group(entry)?);
+    }
+
     builder.finish()
+}
+
+fn build_semantic_group(entry: &SemanticGroupEntry) -> AonixResult<SemanticGroup> {
+    let identifier = SemanticGroupIdentifier::new(entry.id.clone())?;
+    let kind = SemanticGroupKind::from_canonical_name(&entry.id, &entry.kind)?;
+    let members = entry
+        .members
+        .iter()
+        .map(|name| SemanticGroupMember::new(name.clone()))
+        .collect::<AonixResult<Vec<_>>>()?;
+    Ok(SemanticGroup::new(identifier, kind, members, entry.width))
 }
 
 fn validate_format_version(version: &str) -> AonixResult<()> {
