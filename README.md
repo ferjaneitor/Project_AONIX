@@ -97,11 +97,11 @@ Operativa:
 
 ## Estado
 
-**Fase 1 (Núcleo lógico mínimo) completa y verificada.** Implementados el modelo de circuito, el parser/writer `.aoncir`, la validación, el simulador determinista (vector único, por lotes y tabla de verdad exhaustiva), el **hash canónico** `blake3:` y una **CLI**. El código está organizado como **workspace multi-crate** (`aonix-core`, `aonix-sim`, `aonix`, `aonix-cli`).
+**Fases 1 y 2 completas y verificadas.** Implementados el modelo de circuito, el parser/writer `.aoncir`, la validación documental, el simulador determinista (vector único, por lotes y tabla de verdad exhaustiva), el **hash canónico** `blake3:`, una **CLI**, el **validador de acciones** y el **verificador exhaustivo** (decisión PASA/FALLA). El código está organizado como **workspace multi-crate** (`aonix-core`, `aonix-sim`, `aonix-validate`, `aonix-verify`, `aonix`, `aonix-cli`).
 
 El registro de avance vivo está en [docs/PROGRESS.md](docs/PROGRESS.md); las fases siguientes, en [docs/11-roadmap.md](docs/11-roadmap.md).
 
-Verificación: `cargo test --workspace` (174 tests), `cargo clippy --workspace --all-targets` y `cargo doc` sin warnings.
+Verificación: `cargo test --workspace` (197 tests), `cargo clippy --workspace --all-targets` y `cargo doc` sin warnings.
 
 ## Stack
 

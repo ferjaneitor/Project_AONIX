@@ -1,14 +1,13 @@
 [package]
-name = "aonix"
+name = "aonix-verify"
 version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "aonix"
+name = "aonix_verify"
 path = "src/lib.rs"
 
 [dependencies]
 aonix-core.workspace = true
 aonix-sim.workspace = true
-aonix-validate.workspace = true
-aonix-verify.workspace = true
+thiserror.workspace = true

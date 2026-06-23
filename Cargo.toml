@@ -3,6 +3,8 @@ resolver = "3"
 members = [
     "crates/aonix-core",
     "crates/aonix-sim",
+    "crates/aonix-validate",
+    "crates/aonix-verify",
     "crates/aonix",
     "crates/aonix-cli",
 ]
@@ -18,4 +20,6 @@ serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"
 aonix-core = { path = "crates/aonix-core" }
 aonix-sim = { path = "crates/aonix-sim" }
+aonix-validate = { path = "crates/aonix-validate" }
+aonix-verify = { path = "crates/aonix-verify" }
 aonix = { path = "crates/aonix" }

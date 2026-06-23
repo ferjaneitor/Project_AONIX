@@ -10,17 +10,18 @@
 
 ## Estado actual (resumen)
 
-- **Fase del roadmap:** Fase 1 (Núcleo lógico mínimo) **COMPLETA y verificada**.
-- **Estructura:** **workspace Cargo multi-crate** (migrado desde el crate único).
+- **Fase del roadmap:** Fases 1 y 2 **COMPLETAS y verificadas**.
+- **Estructura:** **workspace Cargo multi-crate** (6 crates).
 - **Salud:** `cargo build` / `cargo test --workspace` / `cargo clippy --workspace --all-targets`
-  / `cargo doc -D warnings` → **todo en verde**. **174 tests** pasando.
-- **Reglas absolutas (R1 2D, R2 AND/OR/NOT):** respetadas y blindadas a nivel de tipos.
+  / `cargo doc -D warnings` → **todo en verde**. **197 tests** pasando.
+- **Reglas absolutas (R1 2D, R2 AND/OR/NOT):** respetadas y blindadas a nivel de tipos
+  (y reforzadas en el validador de acciones).
 
 ### Cómo verificar (un solo bloque)
 
 ```bash
 cargo build --workspace
-cargo test  --workspace            # 174 tests, 0 fallos
+cargo test  --workspace            # 197 tests, 0 fallos
 cargo clippy --workspace --all-targets   # 0 warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps   # 0 warnings
 # CLI:
@@ -39,7 +40,9 @@ crates/
 │   └── src/circuit_model, src/format/aoncir (parse, validate, write, hash, schema)
 ├── aonix-sim/                  # Capa 5: simulación (lib aonix_sim) → depende de aonix-core
 │   └── src/simulation (evaluation, topological_order)
-├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation
+├── aonix-validate/             # Capa 4: validador de acciones (action, state, validate)
+├── aonix-verify/               # Capa 6: verificador exhaustivo (spec, report, verify)
+├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify
 │   └── tests/ + tests/data/    # tests de integración + fixtures .aoncir
 └── aonix-cli/                  # Binario `aonix` (CLI) → depende de la facade
 ```
@@ -57,8 +60,8 @@ facade `aonix` mantiene estables las rutas `aonix::circuit_model`, `aonix::forma
 |------|--------|--------|
 | 0 | Fundación documental | ✅ completa |
 | 1 | Núcleo lógico mínimo | ✅ **completa y verificada** |
-| 2 | Validador de acciones + verificador exhaustivo | ⏳ **siguiente** |
-| 3 | Evaluador estructural | ⬜ pendiente |
+| 2 | Validador de acciones + verificador exhaustivo | ✅ **completa y verificada** |
+| 3 | Evaluador estructural | ⏳ **siguiente** |
 | 4 | Memoria canónica e histórica | ⬜ pendiente (decisión: almacenamiento) |
 | 5 | Pruebas escalables | ⬜ pendiente |
 | 6 | Optimizador estructural | ⬜ pendiente |
@@ -102,6 +105,26 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 
 ## Bitácora (entradas, más reciente arriba)
 
+### 2026-06-23 — Fase 2: validador de acciones + verificador exhaustivo
+- **Crate `aonix-validate`** (capa 4): `Action` (conjunto cerrado de acciones de
+  construcción; `Action::create_gate` rechaza XOR/NAND/NOR/XNOR en la capa de
+  acción), `BuildState` con las 10 reglas de docs/08 (`validate`/`apply`),
+  `legal_action_kinds`, y `finalize` → `Circuit` (re-valida vía `CircuitBuilder`).
+  `ValidationError` tipado (nivel L0 de docs/14).
+- **Crate `aonix-verify`** (capa 6): `Specification` (`TruthTable` |
+  `ReferenceFunction`), verificación **exhaustiva** PASA/FALLA con
+  `VerificationReport` (casos evaluados + casos fallidos), reusando el simulador.
+  Tope `MAX_EXHAUSTIVE_INPUT_BITS`. `VerifyError` para desajustes de aridad.
+- **Facade** `aonix` ahora re-exporta `aonix::validate` y `aonix::verify`.
+- **Integración** (`crates/aonix/tests/phase2_pipeline.rs`): se construye un half
+  adder acción por acción sin rechazos, se finaliza y se verifica exhaustivamente
+  (PASA); el full adder del fixture verifica contra función de referencia (PASA);
+  un circuito incorrecto da FALLA con caso concreto; XOR se rechaza. Cumple los
+  3 criterios de aceptación de Fase 2 del roadmap.
+- Se añadió `Clone` a `AonixError` (todas sus variantes lo admiten).
+- +23 tests (de 174 a 197). Nota: tras añadir un `derive`, `cargo doc` puede
+  fallar por caché incremental; `cargo clean` lo resuelve.
+
 ### 2026-06-23 — Migración a workspace multi-crate
 - Reestructurado el crate único en workspace: `aonix-core` (modelo + formato),
   `aonix-sim` (simulación), `aonix` (facade), `aonix-cli` (binario `aonix`).
@@ -128,9 +151,11 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 
 ## Siguiente paso concreto
 
-**Fase 2 — Validador de acciones + verificador exhaustivo:**
-1. Crate `aonix-validate`: catálogo enumerable de acciones (docs/08), 10 reglas de
-   validación, cálculo de acciones legales dado un estado de construcción.
-2. Crate `aonix-verify`: verificación exhaustiva PASA/FALLA contra spec/tabla de
-   verdad (reusando `simulate_exhaustive`), reporte estructurado de casos fallidos.
-3. Tests por cada regla y criterio de aceptación de Fase 2 del roadmap.
+**Fase 3 — Evaluador estructural (crate `aonix-eval`):** mide calidad, **no decide
+correctitud** (docs/02 capa 7, docs/15). Entregables:
+1. Métricas: conteo de compuertas por tipo, profundidad lógica (camino crítico),
+   señales muertas (no alcanzables desde salidas), fan-in/fan-out, reutilización /
+   compartición de subexpresiones entre salidas, costo agregado ponderado.
+2. Comparador determinista entre dos circuitos (ranking lexicográfico configurable).
+3. Tests; criterio de aceptación del roadmap: dadas dos versiones de
+   `one_bit_full_adder`, el evaluador devuelve un orden estable y reproducible.

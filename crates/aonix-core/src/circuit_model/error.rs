@@ -14,7 +14,7 @@ pub type AonixResult<T> = Result<T, AonixError>;
 /// New variants are added through audited changes (see `docs/25`). No
 /// variant is silently removed. Each variant carries enough information
 /// for downstream tooling to map it to the documented `cause_code`.
-#[derive(Debug, Error, PartialEq, Eq)]
+#[derive(Debug, Clone, Error, PartialEq, Eq)]
 pub enum AonixError {
     /// Identifier with invalid syntax (empty or contains characters outside
     /// `[a-z0-9_]`, or does not start with a lowercase letter).
