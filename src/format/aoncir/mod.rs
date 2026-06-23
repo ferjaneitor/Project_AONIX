@@ -12,6 +12,8 @@ pub mod schema;
 pub mod validate;
 pub mod parse;
 pub mod write;
+pub mod hash;
 
 pub use parse::{parse, SUPPORTED_FORMAT_VERSION};
 pub use write::write;
+pub use hash::hash_canonical;

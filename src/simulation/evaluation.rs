@@ -78,6 +78,63 @@ pub fn simulate(circuit: &Circuit, input: &InputVector) -> AonixResult<OutputVec
     Ok(OutputVector::new(output_bits))
 }
 
+/// Simulates `circuit` over every input vector in `inputs`, returning one
+/// [`OutputVector`] per input in the same order.
+///
+/// This is sub-phase 1.F batch mode: it is a thin, deterministic wrapper
+/// over [`simulate`]. The first input that fails (for example a wrong
+/// length) aborts the whole batch with that error.
+pub fn simulate_batch(
+    circuit: &Circuit,
+    inputs: &[InputVector],
+) -> AonixResult<Vec<OutputVector>> {
+    inputs.iter().map(|input| simulate(circuit, input)).collect()
+}
+
+/// Upper bound on the number of input ports for which
+/// [`simulate_exhaustive`] will enumerate the full 2^n truth table. Beyond
+/// this, exhaustive enumeration is refused to avoid accidental blow-up;
+/// targeted or random testing is the job of later phases.
+pub const MAX_EXHAUSTIVE_INPUT_BITS: usize = 20;
+
+/// Computes the **full truth table** of `circuit`: each of the 2^n input
+/// combinations (n = number of input ports) paired with its output vector.
+///
+/// Combinations are generated in ascending binary order, where the input
+/// port at index `i` (in declared order) takes bit `i` of the counter
+/// (LSB-first: index 0 is the least-significant bit, matching the AONIX
+/// `bit_position` convention of `docs/24` §U.7). The result is therefore
+/// deterministic and stable across runs.
+///
+/// # Errors
+///
+/// Returns [`AonixError::ExhaustiveInputTooLarge`] when the circuit has more
+/// than [`MAX_EXHAUSTIVE_INPUT_BITS`] input ports. Propagates any error from
+/// [`simulate`] (defensive: a well-built circuit never triggers them).
+pub fn simulate_exhaustive(
+    circuit: &Circuit,
+) -> AonixResult<Vec<(InputVector, OutputVector)>> {
+    let input_count = circuit.input_count();
+    if input_count > MAX_EXHAUSTIVE_INPUT_BITS {
+        return Err(AonixError::ExhaustiveInputTooLarge {
+            inputs: input_count,
+            max: MAX_EXHAUSTIVE_INPUT_BITS,
+        });
+    }
+
+    let total: u64 = 1u64 << input_count;
+    let mut table: Vec<(InputVector, OutputVector)> = Vec::with_capacity(total as usize);
+    for combination in 0..total {
+        let bits: Vec<Bit> = (0..input_count)
+            .map(|index| Bit(((combination >> index) & 1) == 1))
+            .collect();
+        let input = InputVector::new(bits);
+        let output = simulate(circuit, &input)?;
+        table.push((input, output));
+    }
+    Ok(table)
+}
+
 fn collect_gate_input_bits(
     gate: &Gate,
     port_values: &BTreeMap<PortIdentifier, Bit>,

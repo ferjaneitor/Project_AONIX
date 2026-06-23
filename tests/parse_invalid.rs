@@ -107,6 +107,40 @@ fn rejects_not_with_two_inputs_with_invalid_arity_error() {
 }
 
 #[test]
+fn rejects_and_with_one_input_with_invalid_arity_error() {
+    let result = try_parse("arity_and_one_input.aoncir");
+    match result {
+        Err(AonixError::InvalidGateArity {
+            kind,
+            given,
+            expected_description,
+        }) => {
+            assert_eq!(kind, "AND");
+            assert_eq!(given, 1);
+            assert_eq!(expected_description, "exactly 2");
+        }
+        other => panic!("expected InvalidGateArity, got {other:?}"),
+    }
+}
+
+#[test]
+fn rejects_not_with_zero_inputs_with_invalid_arity_error() {
+    let result = try_parse("arity_not_zero_inputs.aoncir");
+    match result {
+        Err(AonixError::InvalidGateArity {
+            kind,
+            given,
+            expected_description,
+        }) => {
+            assert_eq!(kind, "NOT");
+            assert_eq!(given, 0);
+            assert_eq!(expected_description, "exactly 1");
+        }
+        other => panic!("expected InvalidGateArity, got {other:?}"),
+    }
+}
+
+#[test]
 fn rejects_unsupported_format_version_with_specific_error() {
     let result = try_parse("unsupported_format_version.aoncir");
     match result {

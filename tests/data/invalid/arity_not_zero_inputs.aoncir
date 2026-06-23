@@ -1,0 +1,26 @@
+[format]
+format_version = "1.0.0"
+
+[meta]
+name = "arity_not_zero_inputs"
+version = "1.0.0"
+level = 1
+
+[[ports.inputs]]
+name = "operand_a"
+
+[[ports.outputs]]
+name = "result"
+
+[[signals]]
+id = "partial_not"
+
+[[gates]]
+id = "g_not"
+kind = "NOT"
+inputs = []
+output = "partial_not"
+
+[[outputs]]
+port = "result"
+source = "partial_not"

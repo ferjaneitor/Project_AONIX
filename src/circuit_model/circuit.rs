@@ -218,6 +218,29 @@ impl CircuitBuilder {
             });
         }
 
+        // 0. (docs/21 rule C1) No gate input may read an output port. Via
+        //    the `.aoncir` parser this is caught earlier by
+        //    `validate_document` with a precise message; this check makes a
+        //    circuit built directly through the builder enjoy the same
+        //    guarantee instead of degrading to a generic UndefinedIdentifier.
+        let declared_output_port_ids: BTreeSet<&PortIdentifier> = self
+            .outputs_in_order
+            .iter()
+            .map(|port| &port.identifier)
+            .collect();
+        for gate in self.gates.values() {
+            for input in &gate.inputs {
+                if let SignalReference::Port(port) = input {
+                    if declared_output_port_ids.contains(port) {
+                        return Err(AonixError::GateInputReferencesOutputPort {
+                            gate: gate.identifier.as_str().to_string(),
+                            output_port: port.as_str().to_string(),
+                        });
+                    }
+                }
+            }
+        }
+
         let known_ports: BTreeSet<&PortIdentifier> = self
             .inputs_in_order
             .iter()
@@ -362,7 +385,7 @@ fn detect_cycle_or_pass(gates: &BTreeMap<GateIdentifier, Gate>) -> AonixResult<(
         for input in &gate.inputs {
             if let SignalReference::InternalSignal(signal) = input {
                 if let Some(producing_gate) = signal_to_producing_gate.get(signal) {
-                    visit(*producing_gate, gates, signal_to_producing_gate, color)?;
+                    visit(producing_gate, gates, signal_to_producing_gate, color)?;
                 }
             }
         }
@@ -700,5 +723,46 @@ mod tests {
             result,
             Err(AonixError::UnassignedOutputPort { .. })
         ));
+    }
+
+    #[test]
+    fn gate_input_referencing_output_port_is_rejected_on_finish() {
+        // Built directly through the builder, a gate input that points at an
+        // OUTPUT port must be rejected with the precise C1 error rather than
+        // degrading to a generic UndefinedIdentifier (docs/21 rule C1).
+        let mut builder = CircuitBuilder::new();
+        builder
+            .add_input_port(make_input_port("data_input", None))
+            .expect("valid");
+        builder
+            .add_output_port(make_output_port("data_output", None))
+            .expect("valid");
+        builder
+            .add_signal(make_signal("internal_signal"))
+            .expect("valid");
+        let gate = Gate::new(
+            GateIdentifier::new("g_bad").expect("valid"),
+            GateKind::Not,
+            vec![SignalReference::Port(
+                PortIdentifier::new("data_output").expect("valid"),
+            )],
+            SignalIdentifier::new("internal_signal").expect("valid"),
+        )
+        .expect("Gate::new only checks arity");
+        builder.add_gate(gate).expect("valid");
+        builder
+            .assign_output(
+                PortIdentifier::new("data_output").expect("valid"),
+                make_signal_reference_for_signal("internal_signal"),
+            )
+            .expect("valid");
+        let result = builder.finish();
+        match result {
+            Err(AonixError::GateInputReferencesOutputPort { gate, output_port }) => {
+                assert_eq!(gate, "g_bad");
+                assert_eq!(output_port, "data_output");
+            }
+            other => panic!("expected GateInputReferencesOutputPort, got {other:?}"),
+        }
     }
 }

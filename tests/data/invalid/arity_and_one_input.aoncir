@@ -1,0 +1,26 @@
+[format]
+format_version = "1.0.0"
+
+[meta]
+name = "arity_and_one_input"
+version = "1.0.0"
+level = 1
+
+[[ports.inputs]]
+name = "operand_a"
+
+[[ports.outputs]]
+name = "result"
+
+[[signals]]
+id = "partial_and"
+
+[[gates]]
+id = "g_and"
+kind = "AND"
+inputs = ["operand_a"]
+output = "partial_and"
+
+[[outputs]]
+port = "result"
+source = "partial_and"

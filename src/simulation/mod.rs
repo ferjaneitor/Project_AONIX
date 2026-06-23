@@ -23,5 +23,7 @@
 pub mod topological_order;
 pub mod evaluation;
 
-pub use evaluation::simulate;
+pub use evaluation::{
+    simulate, simulate_batch, simulate_exhaustive, MAX_EXHAUSTIVE_INPUT_BITS,
+};
 pub use topological_order::compute_topological_order;

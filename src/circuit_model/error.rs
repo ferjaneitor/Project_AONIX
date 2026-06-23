@@ -180,6 +180,14 @@ pub enum AonixError {
         "input vector length mismatch: expected {expected} bits, got {given}"
     )]
     InputVectorLengthMismatch { expected: usize, given: usize },
+
+    /// The circuit has too many input ports for exhaustive truth-table
+    /// enumeration: 2^inputs rows would be impractical. Emitted by
+    /// [`crate::simulation::simulate_exhaustive`].
+    #[error(
+        "circuit has {inputs} input ports; exhaustive enumeration is capped at {max} input bits"
+    )]
+    ExhaustiveInputTooLarge { inputs: usize, max: usize },
 }
 
 #[cfg(test)]
