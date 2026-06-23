@@ -5,6 +5,7 @@ members = [
     "crates/aonix-sim",
     "crates/aonix-validate",
     "crates/aonix-verify",
+    "crates/aonix-eval",
     "crates/aonix",
     "crates/aonix-cli",
 ]
@@ -22,4 +23,5 @@ aonix-core = { path = "crates/aonix-core" }
 aonix-sim = { path = "crates/aonix-sim" }
 aonix-validate = { path = "crates/aonix-validate" }
 aonix-verify = { path = "crates/aonix-verify" }
+aonix-eval = { path = "crates/aonix-eval" }
 aonix = { path = "crates/aonix" }

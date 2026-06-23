@@ -1,0 +1,11 @@
+[package]
+name = "aonix-eval"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "aonix_eval"
+path = "src/lib.rs"
+
+[dependencies]
+aonix-core.workspace = true

@@ -7,10 +7,11 @@
 //! - `aonix-sim` — deterministic combinational simulator (layer 5).
 //! - `aonix-validate` — action validator (layer 4).
 //! - `aonix-verify` — exhaustive verifier (layer 6).
+//! - `aonix-eval` — structural evaluator (layer 7).
 //!
 //! This facade preserves the flat, stable paths `aonix::circuit_model`,
-//! `aonix::format`, `aonix::simulation`, `aonix::validate` and
-//! `aonix::verify` for downstream code (CLI, tests and future crates)
+//! `aonix::format`, `aonix::simulation`, `aonix::validate`, `aonix::verify`
+//! and `aonix::eval` for downstream code (CLI, tests and future crates)
 //! regardless of how the implementation crates evolve.
 
 pub use aonix_core::{circuit_model, format};
@@ -24,4 +25,9 @@ pub mod validate {
 /// Exhaustive verifier (layer 6) — see `aonix_verify`.
 pub mod verify {
     pub use aonix_verify::*;
+}
+
+/// Structural evaluator (layer 7) — see `aonix_eval`.
+pub mod eval {
+    pub use aonix_eval::*;
 }

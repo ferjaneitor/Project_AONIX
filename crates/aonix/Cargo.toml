@@ -12,3 +12,4 @@ aonix-core.workspace = true
 aonix-sim.workspace = true
 aonix-validate.workspace = true
 aonix-verify.workspace = true
+aonix-eval.workspace = true

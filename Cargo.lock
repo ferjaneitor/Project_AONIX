@@ -7,6 +7,7 @@ name = "aonix"
 version = "0.1.0"
 dependencies = [
  "aonix-core",
+ "aonix-eval",
  "aonix-sim",
  "aonix-validate",
  "aonix-verify",
@@ -27,6 +28,13 @@ dependencies = [
  "serde",
  "thiserror",
  "toml",
+]
+
+[[package]]
+name = "aonix-eval"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
 ]
 
 [[package]]

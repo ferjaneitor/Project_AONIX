@@ -10,10 +10,10 @@
 
 ## Estado actual (resumen)
 
-- **Fase del roadmap:** Fases 1 y 2 **COMPLETAS y verificadas**.
-- **Estructura:** **workspace Cargo multi-crate** (6 crates).
+- **Fase del roadmap:** Fases 1, 2 y 3 **COMPLETAS y verificadas**.
+- **Estructura:** **workspace Cargo multi-crate** (7 crates).
 - **Salud:** `cargo build` / `cargo test --workspace` / `cargo clippy --workspace --all-targets`
-  / `cargo doc -D warnings` → **todo en verde**. **197 tests** pasando.
+  / `cargo doc -D warnings` → **todo en verde**. **208 tests** pasando.
 - **Reglas absolutas (R1 2D, R2 AND/OR/NOT):** respetadas y blindadas a nivel de tipos
   (y reforzadas en el validador de acciones).
 
@@ -21,7 +21,7 @@
 
 ```bash
 cargo build --workspace
-cargo test  --workspace            # 197 tests, 0 fallos
+cargo test  --workspace            # 208 tests, 0 fallos
 cargo clippy --workspace --all-targets   # 0 warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps   # 0 warnings
 # CLI:
@@ -42,7 +42,8 @@ crates/
 │   └── src/simulation (evaluation, topological_order)
 ├── aonix-validate/             # Capa 4: validador de acciones (action, state, validate)
 ├── aonix-verify/               # Capa 6: verificador exhaustivo (spec, report, verify)
-├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify
+├── aonix-eval/                 # Capa 7: evaluador estructural (metrics, compare)
+├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify/eval
 │   └── tests/ + tests/data/    # tests de integración + fixtures .aoncir
 └── aonix-cli/                  # Binario `aonix` (CLI) → depende de la facade
 ```
@@ -61,8 +62,8 @@ facade `aonix` mantiene estables las rutas `aonix::circuit_model`, `aonix::forma
 | 0 | Fundación documental | ✅ completa |
 | 1 | Núcleo lógico mínimo | ✅ **completa y verificada** |
 | 2 | Validador de acciones + verificador exhaustivo | ✅ **completa y verificada** |
-| 3 | Evaluador estructural | ⏳ **siguiente** |
-| 4 | Memoria canónica e histórica | ⬜ pendiente (decisión: almacenamiento) |
+| 3 | Evaluador estructural | ✅ **completa y verificada** |
+| 4 | Memoria canónica e histórica | ⏳ **siguiente** (decisión pendiente: almacenamiento) |
 | 5 | Pruebas escalables | ⬜ pendiente |
 | 6 | Optimizador estructural | ⬜ pendiente |
 | 7 | Currículo y tareas (0–5) | ⬜ pendiente |
@@ -104,6 +105,26 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 ---
 
 ## Bitácora (entradas, más reciente arriba)
+
+### 2026-06-23 — Fase 3: evaluador estructural
+- **Crate `aonix-eval`** (capa 7): `Metrics` (conteo de compuertas por tipo,
+  profundidad lógica / camino crítico, señales muertas, fan-in/out máximos,
+  compartición de subexpresiones, costo agregado ponderado con `CostWeights`),
+  `evaluate`/`evaluate_with_weights`, y comparador determinista `compare` /
+  `default_compare` / `is_strictly_better` con `Criterion` y `DEFAULT_RANKING`
+  (orden lexicográfico de docs/13 §28: conteo → profundidad → muertas → reuso;
+  empate favorece al titular, docs/19). **El evaluador mide, no decide.**
+- **Facade** `aonix` re-exporta `aonix::eval`.
+- Fixture nuevo `one_bit_full_adder_redundant.aoncir` (full adder + 1 compuerta
+  muerta) para el test del comparador.
+- **Integración** (`crates/aonix/tests/phase3_evaluator.rs`): el full adder
+  canónico mide 13 compuertas (6 AND/3 OR/4 NOT), profundidad 6, 0 muertas; la
+  variante redundante mide 14 compuertas y 1 muerta; el comparador rankea la
+  canónica como estrictamente mejor, de forma **estable y reproducible** entre
+  corridas (criterio de aceptación de Fase 3).
+- Binario renombrado a `aonix-cli` (evita colisión de docs con el crate facade
+  `aonix`). Invocar: `cargo run -p aonix-cli -- <subcomando>`.
+- +11 tests (de 197 a 208).
 
 ### 2026-06-23 — Fase 2: validador de acciones + verificador exhaustivo
 - **Crate `aonix-validate`** (capa 4): `Action` (conjunto cerrado de acciones de
@@ -151,11 +172,16 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 
 ## Siguiente paso concreto
 
-**Fase 3 — Evaluador estructural (crate `aonix-eval`):** mide calidad, **no decide
-correctitud** (docs/02 capa 7, docs/15). Entregables:
-1. Métricas: conteo de compuertas por tipo, profundidad lógica (camino crítico),
-   señales muertas (no alcanzables desde salidas), fan-in/fan-out, reutilización /
-   compartición de subexpresiones entre salidas, costo agregado ponderado.
-2. Comparador determinista entre dos circuitos (ranking lexicográfico configurable).
-3. Tests; criterio de aceptación del roadmap: dadas dos versiones de
-   `one_bit_full_adder`, el evaluador devuelve un orden estable y reproducible.
+**Fase 4 — Memoria canónica e histórica (crate `aonix-memory`):** persistencia con
+políticas de reemplazo (docs/02 capa 9, docs/05, docs/19). Entregables:
+1. Promoción **atómica** del oficial activo (una sola versión activa por circuito y
+   tamaño), reutilizando `hash_canonical` (dedupe) e `is_strictly_better` (mejora
+   estricta del evaluador).
+2. Memoria histórica **append-only** (nunca se borra) + memoria experimental.
+3. Índice + recuperación sin pérdida.
+
+**Decisión pendiente del usuario — almacenamiento físico:** por defecto se propondrá
+**archivos planos auditables** (TOML/JSON) + índice (recomendación del roadmap);
+alternativa SQLite/sled/redb. Criterio de aceptación: promover a oficial activo es
+transaccional; una versión "mejor" reemplaza a la activa y la anterior queda en el
+histórico recuperable.
