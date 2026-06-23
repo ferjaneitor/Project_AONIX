@@ -3,13 +3,35 @@
 version = 4
 
 [[package]]
-name = "Project_AONIX"
+name = "aonix"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
+ "aonix-sim",
+]
+
+[[package]]
+name = "aonix-cli"
+version = "0.1.0"
+dependencies = [
+ "aonix",
+]
+
+[[package]]
+name = "aonix-core"
 version = "0.1.0"
 dependencies = [
  "blake3",
  "serde",
  "thiserror",
  "toml",
+]
+
+[[package]]
+name = "aonix-sim"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
 ]
 
 [[package]]

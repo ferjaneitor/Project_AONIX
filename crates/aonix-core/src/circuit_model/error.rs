@@ -182,8 +182,8 @@ pub enum AonixError {
     InputVectorLengthMismatch { expected: usize, given: usize },
 
     /// The circuit has too many input ports for exhaustive truth-table
-    /// enumeration: 2^inputs rows would be impractical. Emitted by
-    /// [`crate::simulation::simulate_exhaustive`].
+    /// enumeration: 2^inputs rows would be impractical. Emitted by the
+    /// exhaustive simulator (`aonix_sim::simulation::simulate_exhaustive`).
     #[error(
         "circuit has {inputs} input ports; exhaustive enumeration is capped at {max} input bits"
     )]

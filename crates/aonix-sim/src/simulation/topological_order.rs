@@ -5,17 +5,17 @@
 //! order of [`GateIdentifier`]. This makes the output **strictly
 //! deterministic**: same circuit ⇒ same order, every time.
 //!
-//! Cycle handling: [`crate::circuit_model::CircuitBuilder::finish`]
+//! Cycle handling: [`aonix_core::circuit_model::CircuitBuilder::finish`]
 //! already rejects circuits with cycles. This function is defensive
 //! anyway: if it fails to drain every gate it returns
 //! [`AonixError::CycleDetected`].
 //!
-//! [`Circuit`]: crate::circuit_model::Circuit
-//! [`GateIdentifier`]: crate::circuit_model::GateIdentifier
+//! [`Circuit`]: aonix_core::circuit_model::Circuit
+//! [`GateIdentifier`]: aonix_core::circuit_model::GateIdentifier
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::circuit_model::{
+use aonix_core::circuit_model::{
     AonixError, AonixResult, Circuit, GateIdentifier, SignalIdentifier, SignalReference,
 };
 
@@ -31,7 +31,7 @@ use crate::circuit_model::{
 ///
 /// Returns [`AonixError::CycleDetected`] if the circuit graph contains a
 /// cycle. In practice this should not happen for circuits built via
-/// [`crate::circuit_model::CircuitBuilder::finish`] or loaded through
+/// [`aonix_core::circuit_model::CircuitBuilder::finish`] or loaded through
 /// the `.aoncir` parser, both of which already reject cycles; the check
 /// is kept here as a defensive invariant.
 pub fn compute_topological_order(circuit: &Circuit) -> AonixResult<Vec<GateIdentifier>> {
@@ -114,7 +114,7 @@ pub fn compute_topological_order(circuit: &Circuit) -> AonixResult<Vec<GateIdent
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::circuit_model::{
+    use aonix_core::circuit_model::{
         CircuitBuilder, Gate, GateKind, Port, PortIdentifier, PortRole, Signal, SignalIdentifier,
         SignalReference,
     };
@@ -188,14 +188,14 @@ mod tests {
         builder.add_signal(signal("intermediate")).expect("ok");
         builder.add_signal(signal("final_signal")).expect("ok");
         let g_first = Gate::new(
-            crate::circuit_model::GateIdentifier::new("g_first").expect("ok"),
+            aonix_core::circuit_model::GateIdentifier::new("g_first").expect("ok"),
             GateKind::And,
             vec![port_ref("operand_a"), port_ref("operand_b")],
             SignalIdentifier::new("intermediate").expect("ok"),
         )
         .expect("ok");
         let g_second = Gate::new(
-            crate::circuit_model::GateIdentifier::new("g_second").expect("ok"),
+            aonix_core::circuit_model::GateIdentifier::new("g_second").expect("ok"),
             GateKind::Not,
             vec![signal_ref("intermediate")],
             SignalIdentifier::new("final_signal").expect("ok"),
@@ -239,7 +239,7 @@ mod tests {
             ("g_beta", "input_b", "signal_b"),
         ] {
             let gate = Gate::new(
-                crate::circuit_model::GateIdentifier::new(gate_name).expect("ok"),
+                aonix_core::circuit_model::GateIdentifier::new(gate_name).expect("ok"),
                 GateKind::Not,
                 vec![port_ref(input_port_name)],
                 SignalIdentifier::new(signal_name).expect("ok"),
@@ -276,7 +276,7 @@ mod tests {
             builder
                 .add_gate(
                     Gate::new(
-                        crate::circuit_model::GateIdentifier::new("g_and").expect("ok"),
+                        aonix_core::circuit_model::GateIdentifier::new("g_and").expect("ok"),
                         GateKind::And,
                         vec![port_ref("input_a"), port_ref("input_b")],
                         SignalIdentifier::new("intermediate").expect("ok"),
@@ -287,7 +287,7 @@ mod tests {
             builder
                 .add_gate(
                     Gate::new(
-                        crate::circuit_model::GateIdentifier::new("g_not").expect("ok"),
+                        aonix_core::circuit_model::GateIdentifier::new("g_not").expect("ok"),
                         GateKind::Not,
                         vec![signal_ref("intermediate")],
                         SignalIdentifier::new("final_signal").expect("ok"),

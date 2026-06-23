@@ -1,0 +1,11 @@
+[package]
+name = "aonix-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "aonix"
+path = "src/main.rs"
+
+[dependencies]
+aonix.workspace = true

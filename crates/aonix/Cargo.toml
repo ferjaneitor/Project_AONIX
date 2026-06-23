@@ -1,0 +1,12 @@
+[package]
+name = "aonix"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "aonix"
+path = "src/lib.rs"
+
+[dependencies]
+aonix-core.workspace = true
+aonix-sim.workspace = true

@@ -7,13 +7,13 @@
 //! Primitive constants do not exist as [`SignalReference`] variants in
 //! Phase 1, so no constant value can sneak in.
 //!
-//! [`Circuit`]: crate::circuit_model::Circuit
-//! [`GateKind`]: crate::circuit_model::GateKind
-//! [`SignalReference`]: crate::circuit_model::SignalReference
+//! [`Circuit`]: aonix_core::circuit_model::Circuit
+//! [`GateKind`]: aonix_core::circuit_model::GateKind
+//! [`SignalReference`]: aonix_core::circuit_model::SignalReference
 
 use std::collections::BTreeMap;
 
-use crate::circuit_model::{
+use aonix_core::circuit_model::{
     AonixError, AonixResult, Bit, Circuit, Gate, GateKind, InputVector, OutputVector,
     PortIdentifier, SignalIdentifier, SignalReference,
 };
@@ -174,7 +174,7 @@ fn resolve_signal_reference(
 ///
 /// The exhaustive match on [`GateKind`] is the type-level enforcement of
 /// R2: no other gate kind exists, no other gate kind can be evaluated.
-/// Arity is trusted (already enforced by [`crate::circuit_model::Gate::new`]).
+/// Arity is trusted (already enforced by [`aonix_core::circuit_model::Gate::new`]).
 fn evaluate_primitive_gate(kind: GateKind, inputs: &[Bit]) -> Bit {
     match kind {
         GateKind::Not => Bit(!inputs[0].is_one()),
