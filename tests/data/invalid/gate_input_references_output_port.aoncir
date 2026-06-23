@@ -1,0 +1,35 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "gate_input_references_output_port_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 2
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "operand_a"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[signals]]
+id = "data_output_internal"
+
+# The AND gate reads "data_output", which is an OUTPUT PORT. Gate inputs
+# may only come from input ports or internal signals.
+[[gates]]
+id     = "g_bad"
+kind   = "AND"
+inputs = ["operand_a", "data_output"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"

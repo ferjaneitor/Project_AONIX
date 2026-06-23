@@ -1,0 +1,47 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "group_tag_inconsistency_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 9
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "operand_a"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "operand_b"
+semantic_tag = "operand_bit"
+group        = ""
+
+# This flag-set group has a member whose tag is "data_bit", which is not
+# a Category-3 flag tag. Incompatible with kind = "flags".
+[[ports.outputs]]
+name         = "zero_indicator"
+semantic_tag = "data_bit"
+group        = "status_flags"
+bit_position = 0
+
+[[semantic_groups]]
+id      = "status_flags"
+kind    = "flags"
+members = ["zero_indicator"]
+width   = 1
+
+[[signals]]
+id = "zero_indicator_internal"
+
+[[gates]]
+id     = "g_and"
+kind   = "AND"
+inputs = ["operand_a", "operand_b"]
+output = "zero_indicator_internal"
+
+[[outputs]]
+port   = "zero_indicator"
+source = "zero_indicator_internal"

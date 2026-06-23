@@ -20,6 +20,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use crate::circuit_model::error::{AonixError, AonixResult};
 use crate::circuit_model::gate::{Gate, GateIdentifier, SignalReference};
 use crate::circuit_model::port::{Port, PortIdentifier, PortRole};
+use crate::circuit_model::semantic_group::SemanticGroup;
 use crate::circuit_model::signal::{Signal, SignalIdentifier};
 
 /// Immutable circuit ready for simulation, verification, evaluation,
@@ -31,6 +32,13 @@ pub struct Circuit {
     signals: BTreeMap<SignalIdentifier, Signal>,
     gates: BTreeMap<GateIdentifier, Gate>,
     output_assignments: BTreeMap<PortIdentifier, SignalReference>,
+    /// Semantic groups in declared order (the order of appearance of
+    /// `[[semantic_groups]]` in the source `.aoncir`). Deterministic.
+    /// Consistency (member existence, width, bit_position) is guaranteed
+    /// by the document-level validator before the circuit is built; this
+    /// field stores the canonical truth so the writer can regenerate a
+    /// valid `.aoncir` (Sub-phase 1.D).
+    semantic_groups: Vec<SemanticGroup>,
 }
 
 impl Circuit {
@@ -72,6 +80,11 @@ impl Circuit {
         self.output_assignments.get(port)
     }
 
+    /// Returns the semantic groups in deterministic declared order.
+    pub fn semantic_groups(&self) -> &[SemanticGroup] {
+        &self.semantic_groups
+    }
+
     /// Number of input ports.
     pub fn input_count(&self) -> usize {
         self.inputs_in_order.len()
@@ -91,6 +104,11 @@ impl Circuit {
     pub fn gate_count(&self) -> usize {
         self.gates.len()
     }
+
+    /// Number of declared semantic groups.
+    pub fn semantic_group_count(&self) -> usize {
+        self.semantic_groups.len()
+    }
 }
 
 /// Builder for [`Circuit`]. Accumulates ports, signals, gates and output
@@ -105,6 +123,7 @@ pub struct CircuitBuilder {
     signals: BTreeMap<SignalIdentifier, Signal>,
     gates: BTreeMap<GateIdentifier, Gate>,
     output_assignments: BTreeMap<PortIdentifier, SignalReference>,
+    semantic_groups: Vec<SemanticGroup>,
     all_identifiers: HashSet<String>,
 }
 
@@ -159,6 +178,19 @@ impl CircuitBuilder {
         self.register_unique_identifier(gate.identifier.as_str(), "gates")?;
         self.gates.insert(gate.identifier.clone(), gate);
         Ok(self)
+    }
+
+    /// Registers a semantic group, preserving declaration order.
+    ///
+    /// The builder only stores the group; consistency (unique id, allowed
+    /// kind, member existence, width, bit_position) is the responsibility
+    /// of the document-level validator
+    /// (`crate::format::aoncir::validate`), which runs before the circuit
+    /// is built. This keeps the validator the single authority for
+    /// consistency.
+    pub fn add_semantic_group(&mut self, group: SemanticGroup) -> &mut Self {
+        self.semantic_groups.push(group);
+        self
     }
 
     /// Assigns a source signal reference to an output port. Each output
@@ -249,6 +281,7 @@ impl CircuitBuilder {
             signals: self.signals,
             gates: self.gates,
             output_assignments: self.output_assignments,
+            semantic_groups: self.semantic_groups,
         })
     }
 

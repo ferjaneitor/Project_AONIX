@@ -1,0 +1,153 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "one_bit_full_adder"
+version        = "1.0.0"
+parameters     = { width = 1 }
+level          = 5
+task_id        = "one_bit_full_adder"
+hash_canonical = "blake3:placeholder"
+predecessor    = ""
+author         = "phase_1_d_seed"
+created_at     = "2026-05-17T00:00:00Z"
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "operand_a"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "operand_b"
+semantic_tag = "operand_bit"
+group        = ""
+
+[[ports.inputs]]
+name         = "carry_input"
+semantic_tag = "carry"
+group        = ""
+
+[[ports.outputs]]
+name         = "sum_output"
+semantic_tag = "sum_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "carry_output"
+semantic_tag = "carry"
+group        = ""
+
+[[signals]]
+id = "operand_a_negated"
+[[signals]]
+id = "operand_b_negated"
+[[signals]]
+id = "operand_a_and_operand_b_negated"
+[[signals]]
+id = "operand_a_negated_and_operand_b"
+[[signals]]
+id = "exclusive_or_behavior_of_operands"
+[[signals]]
+id = "carry_input_negated"
+[[signals]]
+id = "exclusive_or_and_carry_input_negated"
+[[signals]]
+id = "exclusive_or_negated"
+[[signals]]
+id = "exclusive_or_negated_and_carry_input"
+[[signals]]
+id = "sum_output_internal"
+[[signals]]
+id = "operand_a_and_operand_b"
+[[signals]]
+id = "exclusive_or_and_carry_input"
+[[signals]]
+id = "carry_output_internal"
+
+[[gates]]
+id     = "g01_negate_a"
+kind   = "NOT"
+inputs = ["operand_a"]
+output = "operand_a_negated"
+
+[[gates]]
+id     = "g02_negate_b"
+kind   = "NOT"
+inputs = ["operand_b"]
+output = "operand_b_negated"
+
+[[gates]]
+id     = "g03_a_and_not_b"
+kind   = "AND"
+inputs = ["operand_a", "operand_b_negated"]
+output = "operand_a_and_operand_b_negated"
+
+[[gates]]
+id     = "g04_not_a_and_b"
+kind   = "AND"
+inputs = ["operand_a_negated", "operand_b"]
+output = "operand_a_negated_and_operand_b"
+
+[[gates]]
+id     = "g05_xor_behavior"
+kind   = "OR"
+inputs = ["operand_a_and_operand_b_negated", "operand_a_negated_and_operand_b"]
+output = "exclusive_or_behavior_of_operands"
+
+[[gates]]
+id     = "g06_negate_carry_input"
+kind   = "NOT"
+inputs = ["carry_input"]
+output = "carry_input_negated"
+
+[[gates]]
+id     = "g07_xor_and_not_carry"
+kind   = "AND"
+inputs = ["exclusive_or_behavior_of_operands", "carry_input_negated"]
+output = "exclusive_or_and_carry_input_negated"
+
+[[gates]]
+id     = "g08_negate_xor"
+kind   = "NOT"
+inputs = ["exclusive_or_behavior_of_operands"]
+output = "exclusive_or_negated"
+
+[[gates]]
+id     = "g09_not_xor_and_carry"
+kind   = "AND"
+inputs = ["exclusive_or_negated", "carry_input"]
+output = "exclusive_or_negated_and_carry_input"
+
+[[gates]]
+id     = "g10_sum"
+kind   = "OR"
+inputs = ["exclusive_or_and_carry_input_negated", "exclusive_or_negated_and_carry_input"]
+output = "sum_output_internal"
+
+[[gates]]
+id     = "g11_a_and_b"
+kind   = "AND"
+inputs = ["operand_a", "operand_b"]
+output = "operand_a_and_operand_b"
+
+[[gates]]
+id     = "g12_xor_and_carry"
+kind   = "AND"
+inputs = ["exclusive_or_behavior_of_operands", "carry_input"]
+output = "exclusive_or_and_carry_input"
+
+[[gates]]
+id     = "g13_carry_out"
+kind   = "OR"
+inputs = ["operand_a_and_operand_b", "exclusive_or_and_carry_input"]
+output = "carry_output_internal"
+
+[[outputs]]
+port   = "sum_output"
+source = "sum_output_internal"
+
+[[outputs]]
+port   = "carry_output"
+source = "carry_output_internal"

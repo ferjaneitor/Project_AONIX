@@ -1,0 +1,47 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "group_noncontiguous_bit_position_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 6
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "operand_bit_zero"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 0
+
+# Gap: positions 0 and 2, missing 1, for a width-2 group.
+[[ports.inputs]]
+name         = "operand_bit_two"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 2
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[semantic_groups]]
+id      = "operand_bus"
+kind    = "operand"
+members = ["operand_bit_zero", "operand_bit_two"]
+width   = 2
+
+[[signals]]
+id = "data_output_internal"
+
+[[gates]]
+id     = "g_and"
+kind   = "AND"
+inputs = ["operand_bit_zero", "operand_bit_two"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"

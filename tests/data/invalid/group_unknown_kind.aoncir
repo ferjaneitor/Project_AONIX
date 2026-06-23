@@ -1,0 +1,47 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "group_unknown_kind_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 6
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "operand_bit_zero"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 0
+
+[[ports.inputs]]
+name         = "operand_bit_one"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 1
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+# "megabus" is not a recognized group kind.
+[[semantic_groups]]
+id      = "operand_bus"
+kind    = "megabus"
+members = ["operand_bit_zero", "operand_bit_one"]
+width   = 2
+
+[[signals]]
+id = "data_output_internal"
+
+[[gates]]
+id     = "g_and"
+kind   = "AND"
+inputs = ["operand_bit_zero", "operand_bit_one"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"

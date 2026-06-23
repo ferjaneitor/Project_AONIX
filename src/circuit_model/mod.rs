@@ -13,6 +13,7 @@ pub mod value;
 pub mod port;
 pub mod signal;
 pub mod gate;
+pub mod semantic_group;
 pub mod circuit;
 
 pub use error::{AonixError, AonixResult};
@@ -20,4 +21,7 @@ pub use value::{Bit, InputVector, OutputVector};
 pub use port::{GroupIdentifier, Port, PortIdentifier, PortRole, SemanticTag};
 pub use signal::{Signal, SignalIdentifier};
 pub use gate::{Gate, GateIdentifier, GateKind, SignalReference};
+pub use semantic_group::{
+    SemanticGroup, SemanticGroupIdentifier, SemanticGroupKind, SemanticGroupMember,
+};
 pub use circuit::{Circuit, CircuitBuilder};

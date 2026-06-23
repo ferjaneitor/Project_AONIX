@@ -1,0 +1,36 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "dangling_signal_should_be_rejected"
+version        = "1.0.0"
+parameters     = {}
+level          = 1
+status         = "experimental"
+
+[[ports.inputs]]
+name         = "data_input"
+semantic_tag = "data_bit"
+group        = ""
+
+[[ports.outputs]]
+name         = "data_output"
+semantic_tag = "data_bit"
+group        = ""
+
+[[signals]]
+id = "data_output_internal"
+
+# The NOT gate references "data_input_typo", which is neither a declared
+# port nor a declared internal signal. The parser must reject with
+# UndefinedIdentifier.
+[[gates]]
+id     = "g_invert"
+kind   = "NOT"
+inputs = ["data_input_typo"]
+output = "data_output_internal"
+
+[[outputs]]
+port   = "data_output"
+source = "data_output_internal"

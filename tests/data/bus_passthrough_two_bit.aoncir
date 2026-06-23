@@ -1,0 +1,91 @@
+[format]
+format_version = "1.0.0"
+encoding       = "utf-8"
+
+[meta]
+name           = "bus_passthrough_two_bit"
+version        = "1.0.0"
+parameters     = { width = 2 }
+level          = 6
+task_id        = "bus_passthrough_two_bit"
+hash_canonical = "blake3:placeholder"
+predecessor    = ""
+author         = "phase_1_c_seed"
+created_at     = "2026-05-15T00:00:00Z"
+status         = "experimental"
+
+# Input bus: operand kind, two bits, LSB-first (bit_position 0 = LSB).
+[[ports.inputs]]
+name         = "operand_bit_zero"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 0
+
+[[ports.inputs]]
+name         = "operand_bit_one"
+semantic_tag = "operand_bit"
+group        = "operand_bus"
+bit_position = 1
+
+# Output bus: bus kind, two bits, LSB-first.
+[[ports.outputs]]
+name         = "result_bit_zero"
+semantic_tag = "data_bit"
+group        = "result_bus"
+bit_position = 0
+
+[[ports.outputs]]
+name         = "result_bit_one"
+semantic_tag = "data_bit"
+group        = "result_bus"
+bit_position = 1
+
+[[semantic_groups]]
+id      = "operand_bus"
+kind    = "operand"
+members = ["operand_bit_zero", "operand_bit_one"]
+width   = 2
+
+[[semantic_groups]]
+id      = "result_bus"
+kind    = "bus"
+members = ["result_bit_zero", "result_bit_one"]
+width   = 2
+
+[[signals]]
+id = "result_bit_zero_internal"
+[[signals]]
+id = "result_bit_one_internal"
+
+[[gates]]
+id     = "g_negate_bit_zero"
+kind   = "NOT"
+inputs = ["operand_bit_zero"]
+output = "result_bit_zero_internal"
+
+[[gates]]
+id     = "g_negate_bit_one"
+kind   = "NOT"
+inputs = ["operand_bit_one"]
+output = "result_bit_one_internal"
+
+[[outputs]]
+port   = "result_bit_zero"
+source = "result_bit_zero_internal"
+
+[[outputs]]
+port   = "result_bit_one"
+source = "result_bit_one_internal"
+
+# Opaque auxiliary sections: present but never used to build the Circuit.
+[verification]
+result = "PASS"
+
+[metrics]
+gate_count = { NOT = 2, TOTAL = 2 }
+
+[layout]
+strategy = "layered"
+
+[history]
+ancestors = []
