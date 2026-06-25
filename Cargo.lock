@@ -9,6 +9,7 @@ dependencies = [
  "aonix-core",
  "aonix-eval",
  "aonix-memory",
+ "aonix-opt",
  "aonix-sim",
  "aonix-test",
  "aonix-validate",
@@ -45,6 +46,16 @@ version = "0.1.0"
 dependencies = [
  "aonix-core",
  "aonix-eval",
+ "thiserror",
+]
+
+[[package]]
+name = "aonix-opt"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
+ "aonix-eval",
+ "aonix-sim",
  "thiserror",
 ]
 

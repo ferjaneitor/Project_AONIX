@@ -46,3 +46,8 @@ pub mod memory {
 pub mod testing {
     pub use aonix_test::*;
 }
+
+/// Structural optimizer (Phase 6) — see `aonix_opt`.
+pub mod opt {
+    pub use aonix_opt::*;
+}

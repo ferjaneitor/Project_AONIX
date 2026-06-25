@@ -1,18 +1,14 @@
 [package]
-name = "aonix"
+name = "aonix-opt"
 version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "aonix"
+name = "aonix_opt"
 path = "src/lib.rs"
 
 [dependencies]
 aonix-core.workspace = true
 aonix-sim.workspace = true
-aonix-validate.workspace = true
-aonix-verify.workspace = true
 aonix-eval.workspace = true
-aonix-memory.workspace = true
-aonix-test.workspace = true
-aonix-opt.workspace = true
+thiserror.workspace = true

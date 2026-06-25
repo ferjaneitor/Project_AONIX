@@ -97,11 +97,11 @@ Operativa:
 
 ## Estado
 
-**Fases 1–5 completas y verificadas.** Implementados el modelo de circuito, el parser/writer `.aoncir`, la validación documental, el simulador determinista (vector único, por lotes y tabla de verdad exhaustiva), el **hash canónico** `blake3:`, una **CLI**, el **validador de acciones**, el **verificador exhaustivo** (decisión PASA/FALLA), el **evaluador estructural** (métricas + ranking determinista), la **memoria canónica/histórica** (promoción atómica, dedupe, histórico append-only) y las **pruebas escalables** (exhaustiva/aleatoria con semilla/casos límite/regresión). El código está organizado como **workspace multi-crate** (`aonix-core`, `aonix-sim`, `aonix-validate`, `aonix-verify`, `aonix-eval`, `aonix-memory`, `aonix-test`, `aonix`, `aonix-cli`).
+**Fases 1–6 completas y verificadas.** Implementados el modelo de circuito, el parser/writer `.aoncir`, la validación documental, el simulador determinista (vector único, por lotes y tabla de verdad exhaustiva), el **hash canónico** `blake3:`, una **CLI**, el **validador de acciones**, el **verificador exhaustivo** (decisión PASA/FALLA), el **evaluador estructural** (métricas + ranking determinista), la **memoria canónica/histórica** (promoción atómica, dedupe, histórico append-only), las **pruebas escalables** (exhaustiva/aleatoria con semilla/casos límite/regresión) y el **optimizador estructural** (transformaciones que preservan comportamiento con doble garantía algebraica + equivalencia diferencial). El código está organizado como **workspace multi-crate** (`aonix-core`, `aonix-sim`, `aonix-validate`, `aonix-verify`, `aonix-eval`, `aonix-memory`, `aonix-test`, `aonix-opt`, `aonix`, `aonix-cli`).
 
 El registro de avance vivo está en [docs/PROGRESS.md](docs/PROGRESS.md); las fases siguientes, en [docs/11-roadmap.md](docs/11-roadmap.md).
 
-Verificación: `cargo test --workspace` (226 tests), `cargo clippy --workspace --all-targets` y `cargo doc` sin warnings.
+Verificación: `cargo test --workspace` (233 tests), `cargo clippy --workspace --all-targets` y `cargo doc` sin warnings.
 
 ## Stack
 

@@ -10,10 +10,10 @@
 
 ## Estado actual (resumen)
 
-- **Fase del roadmap:** Fases 1, 2, 3, 4 y 5 **COMPLETAS y verificadas**.
-- **Estructura:** **workspace Cargo multi-crate** (9 crates).
+- **Fase del roadmap:** Fases 1–6 **COMPLETAS y verificadas**.
+- **Estructura:** **workspace Cargo multi-crate** (10 crates).
 - **Salud:** `cargo build` / `cargo test --workspace` / `cargo clippy --workspace --all-targets`
-  / `cargo doc -D warnings` → **todo en verde**. **226 tests** pasando.
+  / `cargo doc -D warnings` → **todo en verde**. **233 tests** pasando.
 - **Reglas absolutas (R1 2D, R2 AND/OR/NOT):** respetadas y blindadas a nivel de tipos
   (y reforzadas en el validador de acciones).
 
@@ -21,7 +21,7 @@
 
 ```bash
 cargo build --workspace
-cargo test  --workspace            # 226 tests, 0 fallos
+cargo test  --workspace            # 233 tests, 0 fallos
 cargo clippy --workspace --all-targets   # 0 warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps   # 0 warnings
 # CLI:
@@ -45,7 +45,8 @@ crates/
 ├── aonix-eval/                 # Capa 7: evaluador estructural (metrics, compare)
 ├── aonix-memory/               # Capa 9: memoria canónica/histórica flat-file (store)
 ├── aonix-test/                 # Capa 8: pruebas escalables (prng, generators, suite)
-├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify/eval/memory/testing
+├── aonix-opt/                  # Fase 6: optimizador estructural (transform, optimize, equivalence)
+├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify/eval/memory/testing/opt
 │   └── tests/ + tests/data/    # tests de integración + fixtures .aoncir
 └── aonix-cli/                  # Binario `aonix` (CLI) → depende de la facade
 ```
@@ -67,7 +68,8 @@ facade `aonix` mantiene estables las rutas `aonix::circuit_model`, `aonix::forma
 | 3 | Evaluador estructural | ✅ **completa y verificada** |
 | 4 | Memoria canónica e histórica | ✅ **completa y verificada** (flat-file) |
 | 5 | Pruebas escalables | ✅ **completa y verificada** |
-| 6 | Optimizador estructural | ⏳ **siguiente** |
+| 6 | Optimizador estructural | ✅ **completa y verificada** (MVP) |
+| 7 | Currículo y tareas (0–5) | ⏳ **siguiente** |
 | 5 | Pruebas escalables | ⬜ pendiente |
 | 6 | Optimizador estructural | ⬜ pendiente |
 | 7 | Currículo y tareas (0–5) | ⬜ pendiente |
@@ -109,6 +111,27 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 ---
 
 ## Bitácora (entradas, más reciente arriba)
+
+### 2026-06-24 — Fase 6: optimizador estructural (MVP)
+- **Crate `aonix-opt`** (Fase 6). Catálogo cerrado `TransformId` (espejo docs/23):
+  A.1 eliminación de señales muertas, A.3 doble negación `NOT(NOT x)→x`, B.1
+  idempotencia `AND(x,x)→x`/`OR(x,x)→x`, E.1 CSE (fusiona gates con mismo kind+inputs,
+  conmutativo). trait `Transform` (detector+reescritor puro), `optimize`/`optimize_with`,
+  bucle a **punto fijo**, `OptReport`+`OptStep`+`StepOutcome` (log append-only).
+- **Doble garantía** (docs/15): algebraica por construcción + **equivalencia diferencial
+  contra el circuito original** (`∀v: sim(orig,v)==sim(opt,v)`, exhaustiva ≤16 bits, si no
+  muestreo determinista). Una transformación no equivalente (bug) se **descarta**
+  (backtracking) — test dedicado lo prueba. Solo se conservan mejoras estrictas
+  (`aonix_eval::is_strictly_better`), lo que garantiza terminación.
+- **R2/P.1–P.7**: imposible producir XOR/NAND/NOR/XNOR (enum cerrado) ni saltar
+  re-verificación; test recorre el resultado y confirma solo AND/OR/NOT.
+- Diseño guiado por un **workflow** (3 agentes) que extrajo el catálogo de docs/23 y la
+  semántica del pipeline de docs/15/13/19.
+- **Integración** (`crates/aonix/tests/phase6_optimizer.rs`): el full adder **redundante
+  se optimiza exactamente al canónico** (mismo hash, 14→13 compuertas, 0 muertas); CSE
+  fusiona subexpresión duplicada (2→1). Cumple el criterio de aceptación de Fase 6.
+- +7 tests (de 226 a 233). Nota doc: módulo `optimize` vs función `optimize` exige
+  desambiguar enlaces intra-doc (`[`optimize()`]`).
 
 ### 2026-06-24 — Fase 5: pruebas escalables (+ mejoras a lo existente)
 - **Crate `aonix-test`** (capa 8): PRNG determinista propio `SplitMix64` (semilla
@@ -214,17 +237,17 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 
 ## Siguiente paso concreto
 
-**Fase 6 — Optimizador estructural (crate `aonix-opt`):** transformaciones que
-**preservan comportamiento** (docs/15, docs/23). Entregables:
-1. Transformaciones legítimas: eliminación de señales muertas, doble negación
-   (`NOT NOT x → x`), compuertas redundantes (`AND(x,x)→x`, etc.), CSE/compartición.
-2. Iteración hasta **punto fijo** (o tope), cada paso atómico, con delta de métricas
-   vía `aonix-eval`.
-3. **Doble garantía** de preservación: vía algebraica (catálogo) **+** re-verificación
-   completa tras optimizar (reusa `aonix-verify`/`aonix-test`); si regresa, se descarta
-   esa transformación (backtracking), no el resto.
+**Fase 7 — Currículo y tareas niveles 0–5 (crate `aonix-curriculum`):** sistema de
+tareas operativo (docs/06, docs/12, docs/20). Entregables:
+1. Tipos `Task` (esquema de docs/12: meta, dominio puertos/grupos, `Specification`,
+   pruebas requeridas, criterios de éxito/fallo, visibilidad), `Level`, `Progress`.
+2. Catálogo de las **41 tareas obligatorias** de niveles 0–5 (docs/20), o al menos su
+   estructura + las de niveles 0–1 instanciadas, con su `Specification`.
+3. Condiciones de avance medibles por nivel (matriz de docs/06): tasa de éxito,
+   estabilidad, casos límite, etc.
+4. **Reglas absolutas de tarea (docs/12 §reglas):** una tarea nunca declara qué
+   compuerta derivada usar; `forbidden_actions` solo superconjunto del prohibido base;
+   nunca marca éxito sin el verificador.
 
-**Prohibido (docs/23 P.1–P.7):** nunca colapsar un patrón en nodo XOR/NAND/NOR/XNOR ni
-en subcircuito opaco; nunca saltar la re-verificación. Criterio de aceptación: un
-circuito con redundancia conocida se reduce a una mejora medible sin fallar ninguna
-prueba que el original superaba.
+Criterio de aceptación del roadmap: un agente (humano vía CLI) puede recorrer niveles
+0–5 proponiendo acciones y recibiendo retroalimentación.
