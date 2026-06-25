@@ -10,10 +10,10 @@
 
 ## Estado actual (resumen)
 
-- **Fase del roadmap:** Fases 1, 2 y 3 **COMPLETAS y verificadas**.
-- **Estructura:** **workspace Cargo multi-crate** (7 crates).
+- **Fase del roadmap:** Fases 1, 2, 3, 4 y 5 **COMPLETAS y verificadas**.
+- **Estructura:** **workspace Cargo multi-crate** (9 crates).
 - **Salud:** `cargo build` / `cargo test --workspace` / `cargo clippy --workspace --all-targets`
-  / `cargo doc -D warnings` → **todo en verde**. **208 tests** pasando.
+  / `cargo doc -D warnings` → **todo en verde**. **226 tests** pasando.
 - **Reglas absolutas (R1 2D, R2 AND/OR/NOT):** respetadas y blindadas a nivel de tipos
   (y reforzadas en el validador de acciones).
 
@@ -21,7 +21,7 @@
 
 ```bash
 cargo build --workspace
-cargo test  --workspace            # 208 tests, 0 fallos
+cargo test  --workspace            # 226 tests, 0 fallos
 cargo clippy --workspace --all-targets   # 0 warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps   # 0 warnings
 # CLI:
@@ -43,7 +43,9 @@ crates/
 ├── aonix-validate/             # Capa 4: validador de acciones (action, state, validate)
 ├── aonix-verify/               # Capa 6: verificador exhaustivo (spec, report, verify)
 ├── aonix-eval/                 # Capa 7: evaluador estructural (metrics, compare)
-├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify/eval
+├── aonix-memory/               # Capa 9: memoria canónica/histórica flat-file (store)
+├── aonix-test/                 # Capa 8: pruebas escalables (prng, generators, suite)
+├── aonix/                      # Crate paraguas (facade): re-exporta circuit_model/format/simulation/validate/verify/eval/memory/testing
 │   └── tests/ + tests/data/    # tests de integración + fixtures .aoncir
 └── aonix-cli/                  # Binario `aonix` (CLI) → depende de la facade
 ```
@@ -63,7 +65,9 @@ facade `aonix` mantiene estables las rutas `aonix::circuit_model`, `aonix::forma
 | 1 | Núcleo lógico mínimo | ✅ **completa y verificada** |
 | 2 | Validador de acciones + verificador exhaustivo | ✅ **completa y verificada** |
 | 3 | Evaluador estructural | ✅ **completa y verificada** |
-| 4 | Memoria canónica e histórica | ⏳ **siguiente** (decisión pendiente: almacenamiento) |
+| 4 | Memoria canónica e histórica | ✅ **completa y verificada** (flat-file) |
+| 5 | Pruebas escalables | ✅ **completa y verificada** |
+| 6 | Optimizador estructural | ⏳ **siguiente** |
 | 5 | Pruebas escalables | ⬜ pendiente |
 | 6 | Optimizador estructural | ⬜ pendiente |
 | 7 | Currículo y tareas (0–5) | ⬜ pendiente |
@@ -105,6 +109,44 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 ---
 
 ## Bitácora (entradas, más reciente arriba)
+
+### 2026-06-24 — Fase 5: pruebas escalables (+ mejoras a lo existente)
+- **Crate `aonix-test`** (capa 8): PRNG determinista propio `SplitMix64` (semilla
+  explícita), generadores `exhaustive`/`random`/`edge_cases`, `RegressionSuite`
+  append-only, y `run_suite` que combina suites contra una `Specification` y entrega
+  PASA/FALLA agregado con desglose por suite. El runner elige qué entradas; el
+  verificador decide.
+- **Mejora a `aonix-verify`:** nuevo primitivo componible `verify_inputs(circuit,
+  spec, &[inputs])` + accesores `Specification::{input_arity,output_arity,
+  expected_output}`. Lo reusa `aonix-test`.
+- **Mejora a `aonix-eval`:** nuevo `Criterion::FanOutMax` (menor es mejor), alineado
+  con el `ranking_order` por defecto de docs/19; `DEFAULT_RANKING` sin cambios.
+- **Facade** `aonix` re-exporta `aonix::testing` (no `aonix::test`, para no chocar con
+  el namespace de tests).
+- **Integración** (`crates/aonix/tests/phase5_testing.rs`): suite combinada PASA sobre
+  AND y full adder; FALLA con casos concretos sobre spec equivocada; **un caso de
+  regresión registrado reaparece automáticamente** en runs posteriores; aleatoria
+  reproducible con misma semilla. Cumple el criterio de aceptación de Fase 5.
+- +11 tests (de 215 a 226).
+
+### 2026-06-24 — Fase 4: memoria canónica e histórica
+- **Crate `aonix-memory`** (capa 9), almacenamiento **flat-file** (decisión por
+  defecto). `MemoryStore` con layout `<root>/<name>/<parameters>/{active.aoncir,
+  history/<hex>.aoncir, experimental/<hex>.aoncir}`. `CircuitKey` (name+parameters,
+  validado [a-z0-9_]). `promote`/`promote_with_ranking` → `PromotionOutcome`
+  (InstalledFirst | Replaced | AlreadyActive | RejectedNotBetter).
+- Semántica docs/19: **1 oficial activo por (name,parameters)**; promoción **atómica**
+  (archiva titular append-only, luego rename atómico del active); reemplazo solo por
+  **mejora estricta** (reusa `aonix_eval::is_strictly_better`); **dedupe por hash**
+  canónico; histórico recuperable sin pérdida.
+- **CLI** `aonix-cli mem <list|show|history|promote>`.
+- **Integración** (`crates/aonix/tests/phase4_memory.rs`): ciclo completo con el full
+  adder canónico vs redundante — instalar (peor) → reemplazar (mejor, archiva) →
+  dedupe → rechazar (peor) a experimental → recuperar histórico sin pérdida. Cumple
+  los 3 criterios de aceptación de Fase 4.
+- +7 tests (de 208 a 215).
+- Nota: `cargo doc` puede fallar con "unresolved import" tras añadir un módulo a la
+  facade por fingerprint obsoleto; `cargo clean` completo (no solo `--doc`) lo resuelve.
 
 ### 2026-06-23 — Fase 3: evaluador estructural
 - **Crate `aonix-eval`** (capa 7): `Metrics` (conteo de compuertas por tipo,
@@ -172,16 +214,17 @@ encadenada, con verificación exhaustiva y este historial por cada cambio**.
 
 ## Siguiente paso concreto
 
-**Fase 4 — Memoria canónica e histórica (crate `aonix-memory`):** persistencia con
-políticas de reemplazo (docs/02 capa 9, docs/05, docs/19). Entregables:
-1. Promoción **atómica** del oficial activo (una sola versión activa por circuito y
-   tamaño), reutilizando `hash_canonical` (dedupe) e `is_strictly_better` (mejora
-   estricta del evaluador).
-2. Memoria histórica **append-only** (nunca se borra) + memoria experimental.
-3. Índice + recuperación sin pérdida.
+**Fase 6 — Optimizador estructural (crate `aonix-opt`):** transformaciones que
+**preservan comportamiento** (docs/15, docs/23). Entregables:
+1. Transformaciones legítimas: eliminación de señales muertas, doble negación
+   (`NOT NOT x → x`), compuertas redundantes (`AND(x,x)→x`, etc.), CSE/compartición.
+2. Iteración hasta **punto fijo** (o tope), cada paso atómico, con delta de métricas
+   vía `aonix-eval`.
+3. **Doble garantía** de preservación: vía algebraica (catálogo) **+** re-verificación
+   completa tras optimizar (reusa `aonix-verify`/`aonix-test`); si regresa, se descarta
+   esa transformación (backtracking), no el resto.
 
-**Decisión pendiente del usuario — almacenamiento físico:** por defecto se propondrá
-**archivos planos auditables** (TOML/JSON) + índice (recomendación del roadmap);
-alternativa SQLite/sled/redb. Criterio de aceptación: promover a oficial activo es
-transaccional; una versión "mejor" reemplaza a la activa y la anterior queda en el
-histórico recuperable.
+**Prohibido (docs/23 P.1–P.7):** nunca colapsar un patrón en nodo XOR/NAND/NOR/XNOR ni
+en subcircuito opaco; nunca saltar la re-verificación. Criterio de aceptación: un
+circuito con redundancia conocida se reduce a una mejora medible sin fallar ninguna
+prueba que el original superaba.

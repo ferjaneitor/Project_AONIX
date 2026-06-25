@@ -18,6 +18,9 @@ pub enum Criterion {
     Depth,
     /// Fewer dead signals is better.
     DeadSignals,
+    /// Lower maximum fan-out is better (controls hot-spot signals,
+    /// `docs/19` default `ranking_order`).
+    FanOutMax,
     /// More subexpression sharing (reuse) is better.
     Reuse,
     /// Lower weighted aggregate cost is better.
@@ -42,6 +45,7 @@ pub fn compare(a: &Metrics, b: &Metrics, order: &[Criterion]) -> Ordering {
             Criterion::GateCount => a.gate_count_total.cmp(&b.gate_count_total),
             Criterion::Depth => a.depth.cmp(&b.depth),
             Criterion::DeadSignals => a.dead_signals.cmp(&b.dead_signals),
+            Criterion::FanOutMax => a.max_fan_out.cmp(&b.max_fan_out),
             // Higher reuse is better, so reverse the comparison.
             Criterion::Reuse => b.shared_signal_count.cmp(&a.shared_signal_count),
             Criterion::AggregateCost => a.aggregate_cost.cmp(&b.aggregate_cost),
@@ -106,6 +110,16 @@ mod tests {
         let more_reuse = metrics(5, 3, 0, 4);
         let less_reuse = metrics(5, 3, 0, 1);
         assert_eq!(default_compare(&more_reuse, &less_reuse), Ordering::Less);
+    }
+
+    #[test]
+    fn fan_out_max_lower_is_better() {
+        let mut low = metrics(5, 3, 0, 2);
+        low.max_fan_out = 2;
+        let mut high = metrics(5, 3, 0, 2);
+        high.max_fan_out = 5;
+        assert_eq!(compare(&low, &high, &[Criterion::FanOutMax]), Ordering::Less);
+        assert_eq!(compare(&high, &low, &[Criterion::FanOutMax]), Ordering::Greater);
     }
 
     #[test]

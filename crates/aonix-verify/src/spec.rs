@@ -37,6 +37,34 @@ pub enum Specification {
     ReferenceFunction(ReferenceFunction),
 }
 
+impl Specification {
+    /// Number of input bits the specification expects.
+    pub fn input_arity(&self) -> usize {
+        match self {
+            Specification::TruthTable(table) => table.input_arity(),
+            Specification::ReferenceFunction(function) => function.input_arity(),
+        }
+    }
+
+    /// Number of output bits the specification produces.
+    pub fn output_arity(&self) -> usize {
+        match self {
+            Specification::TruthTable(table) => table.output_arity(),
+            Specification::ReferenceFunction(function) => function.output_arity(),
+        }
+    }
+
+    /// The expected output for `input`, if the specification covers it. A
+    /// [`ReferenceFunction`] is total (always `Some`); a [`TruthTable`]
+    /// returns `Some` only for declared rows.
+    pub fn expected_output(&self, input: &[bool]) -> Option<Vec<bool>> {
+        match self {
+            Specification::TruthTable(table) => table.expected(input).cloned(),
+            Specification::ReferenceFunction(function) => Some(function.evaluate(input)),
+        }
+    }
+}
+
 /// Explicit truth table: input bit-vector → expected output bit-vector.
 ///
 /// Inputs are stored in a `BTreeMap` so iteration is deterministic. A table

@@ -20,6 +20,7 @@ use std::process::ExitCode;
 
 use aonix::circuit_model::{Bit, Circuit, InputVector};
 use aonix::format::aoncir::{hash_canonical, parse, write};
+use aonix::memory::{CircuitKey, MemoryStore, PromotionOutcome};
 use aonix::simulation::{simulate, simulate_exhaustive};
 
 fn main() -> ExitCode {
@@ -40,12 +41,13 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("canon") => cmd_canon(args.get(2)),
         Some("simulate") => cmd_simulate(args.get(2), args.get(3)),
         Some("truth-table") => cmd_truth_table(args.get(2)),
+        Some("mem") => cmd_mem(args),
         Some("help") | Some("--help") | Some("-h") | None => {
             print_usage();
             Ok(())
         }
         Some(other) => Err(format!(
-            "unknown subcommand {other:?}. Run `aonix help` for the list."
+            "unknown subcommand {other:?}. Run `aonix-cli help` for the list."
         )),
     }
 }
@@ -123,6 +125,114 @@ fn cmd_truth_table(path: Option<&String>) -> Result<(), String> {
     Ok(())
 }
 
+fn cmd_mem(args: &[String]) -> Result<(), String> {
+    match args.get(2).map(String::as_str) {
+        Some("list") => mem_list(args.get(3)),
+        Some("show") => mem_show(args.get(3), args.get(4), args.get(5)),
+        Some("history") => mem_history(args.get(3), args.get(4), args.get(5)),
+        Some("promote") => mem_promote(args.get(3), args.get(4), args.get(5), args.get(6)),
+        _ => Err(
+            "usage: aonix-cli mem <list|show|history|promote> <memory-root> [name] [parameters] [file]".into(),
+        ),
+    }
+}
+
+fn open_store(root: Option<&String>) -> Result<MemoryStore, String> {
+    let root = root.ok_or("missing <memory-root> argument")?;
+    Ok(MemoryStore::open(root))
+}
+
+fn make_key(name: Option<&String>, parameters: Option<&String>) -> Result<CircuitKey, String> {
+    let name = name.ok_or("missing <name> argument")?;
+    let key = match parameters {
+        Some(parameters) => CircuitKey::new(name.clone(), parameters.clone()),
+        None => CircuitKey::simple(name.clone()),
+    };
+    key.map_err(|error| error.to_string())
+}
+
+fn mem_list(root: Option<&String>) -> Result<(), String> {
+    let store = open_store(root)?;
+    let keys = store.list().map_err(|error| error.to_string())?;
+    if keys.is_empty() {
+        println!("(memory empty)");
+    }
+    for key in keys {
+        let active = store.active_hash(&key).map_err(|error| error.to_string())?;
+        let history = store.history_hexes(&key).map_err(|error| error.to_string())?.len();
+        println!(
+            "{} [{}]  active={}  history={}",
+            key.name(),
+            key.parameters(),
+            active.as_deref().unwrap_or("<none>"),
+            history,
+        );
+    }
+    Ok(())
+}
+
+fn mem_show(
+    root: Option<&String>,
+    name: Option<&String>,
+    parameters: Option<&String>,
+) -> Result<(), String> {
+    let store = open_store(root)?;
+    let key = make_key(name, parameters)?;
+    match store.active(&key).map_err(|error| error.to_string())? {
+        Some(circuit) => {
+            println!("active hash : {}", hash_canonical(&circuit));
+            println!(
+                "interface   : {} input(s), {} output(s), {} gate(s)",
+                circuit.input_count(),
+                circuit.output_count(),
+                circuit.gate_count(),
+            );
+        }
+        None => println!("no active version for {} [{}]", key.name(), key.parameters()),
+    }
+    Ok(())
+}
+
+fn mem_history(
+    root: Option<&String>,
+    name: Option<&String>,
+    parameters: Option<&String>,
+) -> Result<(), String> {
+    let store = open_store(root)?;
+    let key = make_key(name, parameters)?;
+    let hexes = store.history_hexes(&key).map_err(|error| error.to_string())?;
+    if hexes.is_empty() {
+        println!("(no history)");
+    }
+    for hex in hexes {
+        println!("blake3:{hex}");
+    }
+    Ok(())
+}
+
+fn mem_promote(
+    root: Option<&String>,
+    name: Option<&String>,
+    parameters: Option<&String>,
+    file: Option<&String>,
+) -> Result<(), String> {
+    let store = open_store(root)?;
+    let key = make_key(name, parameters)?;
+    let circuit = load(file)?;
+    let outcome = store.promote(&key, &circuit).map_err(|error| error.to_string())?;
+    match outcome {
+        PromotionOutcome::InstalledFirst { hash } => println!("installed first active: {hash}"),
+        PromotionOutcome::Replaced { new_hash, archived_hash } => {
+            println!("replaced: new={new_hash} archived={archived_hash}")
+        }
+        PromotionOutcome::AlreadyActive { hash } => println!("already active (dedup): {hash}"),
+        PromotionOutcome::RejectedNotBetter { candidate_hash, active_hash } => {
+            println!("rejected (not strictly better): candidate={candidate_hash} active={active_hash}")
+        }
+    }
+    Ok(())
+}
+
 fn parse_bits(spec: &str) -> Result<Vec<Bit>, String> {
     spec.chars()
         .map(|character| match character {
@@ -144,7 +254,7 @@ fn bits_to_string(bits: &[Bit]) -> String {
 fn print_usage() {
     println!("AONIX - AND-OR-NOT Integrated eXploration");
     println!();
-    println!("Usage: aonix <subcommand> [arguments]");
+    println!("Usage: aonix-cli <subcommand> [arguments]");
     println!();
     println!("Subcommands:");
     println!("  validate     <file.aoncir>          parse + validate, print a summary");
@@ -152,5 +262,9 @@ fn print_usage() {
     println!("  canon        <file.aoncir>          print the canonical re-serialization");
     println!("  simulate     <file.aoncir> <bits>   simulate one input vector (e.g. 101)");
     println!("  truth-table  <file.aoncir>          print the full truth table");
+    println!("  mem list     <root>                            list circuits in the memory store");
+    println!("  mem show     <root> <name> [params]            show the active version");
+    println!("  mem history  <root> <name> [params]            list archived versions");
+    println!("  mem promote  <root> <name> <params> <file>     promote a .aoncir candidate");
     println!("  help                                show this help");
 }

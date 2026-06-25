@@ -8,11 +8,14 @@
 //! - `aonix-validate` — action validator (layer 4).
 //! - `aonix-verify` — exhaustive verifier (layer 6).
 //! - `aonix-eval` — structural evaluator (layer 7).
+//! - `aonix-memory` — canonical/historical memory (layer 9).
+//! - `aonix-test` — scalable testing suites (layer 8).
 //!
 //! This facade preserves the flat, stable paths `aonix::circuit_model`,
-//! `aonix::format`, `aonix::simulation`, `aonix::validate`, `aonix::verify`
-//! and `aonix::eval` for downstream code (CLI, tests and future crates)
-//! regardless of how the implementation crates evolve.
+//! `aonix::format`, `aonix::simulation`, `aonix::validate`, `aonix::verify`,
+//! `aonix::eval`, `aonix::memory` and `aonix::testing` for downstream code
+//! (CLI, tests and future crates) regardless of how the implementation crates
+//! evolve.
 
 pub use aonix_core::{circuit_model, format};
 pub use aonix_sim::simulation;
@@ -30,4 +33,16 @@ pub mod verify {
 /// Structural evaluator (layer 7) — see `aonix_eval`.
 pub mod eval {
     pub use aonix_eval::*;
+}
+
+/// Canonical/historical memory (layer 9) — see `aonix_memory`.
+pub mod memory {
+    pub use aonix_memory::*;
+}
+
+/// Scalable testing suites (layer 8) — see `aonix_test`. Exposed as
+/// `aonix::testing` (not `aonix::test`, which would clash with the test
+/// attribute namespace in downstream code).
+pub mod testing {
+    pub use aonix_test::*;
 }

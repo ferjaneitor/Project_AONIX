@@ -8,7 +8,9 @@ version = "0.1.0"
 dependencies = [
  "aonix-core",
  "aonix-eval",
+ "aonix-memory",
  "aonix-sim",
+ "aonix-test",
  "aonix-validate",
  "aonix-verify",
 ]
@@ -38,10 +40,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "aonix-memory"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
+ "aonix-eval",
+ "thiserror",
+]
+
+[[package]]
 name = "aonix-sim"
 version = "0.1.0"
 dependencies = [
  "aonix-core",
+]
+
+[[package]]
+name = "aonix-test"
+version = "0.1.0"
+dependencies = [
+ "aonix-core",
+ "aonix-verify",
 ]
 
 [[package]]

@@ -1,0 +1,12 @@
+[package]
+name = "aonix-test"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "aonix_test"
+path = "src/lib.rs"
+
+[dependencies]
+aonix-core.workspace = true
+aonix-verify.workspace = true

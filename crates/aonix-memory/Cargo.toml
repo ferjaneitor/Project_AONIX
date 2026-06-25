@@ -1,0 +1,13 @@
+[package]
+name = "aonix-memory"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "aonix_memory"
+path = "src/lib.rs"
+
+[dependencies]
+aonix-core.workspace = true
+aonix-eval.workspace = true
+thiserror.workspace = true

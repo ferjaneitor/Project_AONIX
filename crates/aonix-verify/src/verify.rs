@@ -28,6 +28,41 @@ pub fn verify(
     }
 }
 
+/// Verifies `circuit` against `spec` on an **explicit set of inputs** (used
+/// by the scalable test suites of `aonix-test`: edge cases, random samples,
+/// regression). Inputs the spec does not cover are skipped (not counted).
+///
+/// # Errors
+///
+/// Same precondition failures as [`verify`] (arity mismatch, simulation
+/// error). Does not check for exhaustiveness — the caller chooses the inputs.
+pub fn verify_inputs(
+    circuit: &Circuit,
+    spec: &Specification,
+    inputs: &[Vec<bool>],
+) -> Result<VerificationReport, VerifyError> {
+    check_arity(circuit, spec.input_arity(), spec.output_arity())?;
+
+    let mut failing_cases = Vec::new();
+    let mut cases_evaluated = 0usize;
+    for input in inputs {
+        let Some(expected) = spec.expected_output(input) else {
+            continue;
+        };
+        let produced = run_case(circuit, input)?;
+        cases_evaluated += 1;
+        if produced != expected {
+            failing_cases.push(FailingCase {
+                input: input.clone(),
+                expected,
+                produced,
+            });
+        }
+    }
+
+    Ok(finish(cases_evaluated, failing_cases))
+}
+
 fn verify_truth_table(
     circuit: &Circuit,
     table: &TruthTable,

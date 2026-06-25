@@ -22,4 +22,4 @@ pub mod verify;
 
 pub use report::{Decision, FailingCase, VerificationReport, VerifyError};
 pub use spec::{ReferenceFunction, Specification, SpecError, TruthTable};
-pub use verify::verify;
+pub use verify::{verify, verify_inputs};
